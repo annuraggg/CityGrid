@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Router, RouterProvider } from "react-router-dom";
 import {
   RedirectToSignIn,
   SignedIn,
@@ -62,7 +62,7 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <></>;
+  return <RouterProvider router={router} />;
 }
 
 export default App;
