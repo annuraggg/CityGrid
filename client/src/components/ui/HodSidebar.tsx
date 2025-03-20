@@ -39,7 +39,7 @@ const Sidebar = ({
         {
             icon: LayoutDashboard,
             label: "Dashboard",
-            link: "/dashboard",
+            link: "/hod/dashboard",
             visible: true,
         },
         {
@@ -55,15 +55,9 @@ const Sidebar = ({
             visible: true,
         },
         {
-            icon: PieChart,
-            label: "Analytics",
-            link: "/analytics",
-            visible: true,
-        },
-        {
             icon: Blocks,
-            label: "Blocks",
-            link: "/blocks",
+            label: "Resources",
+            link: "/resources",
             visible: true,
         },
     ];
@@ -95,7 +89,7 @@ const Sidebar = ({
     }, []);
 
     const handleNavigation = (link: string, label: string) => {
-        navigate(link);
+        navigate("/hod" + link);
         setActive(label.toLowerCase());
         if (isMobile) onClose?.();
     };

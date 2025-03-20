@@ -15,8 +15,11 @@ const HodComplaint = lazy(() => import("./pages/Hod/Complaints/Complaint"));
 const HodNotifications = lazy(
   () => import("./pages/Hod/Notifications/Notifications")
 );
+const Conflict = lazy(() => import("./pages/Hod/Project/Conflict"));
 const HodOnboarding = lazy(() => import("./pages/Hod/OnBoarding/Onboarding"));
 const HodProject = lazy(() => import("./pages/Hod/Project/Project"));
+const ProjectDetails = lazy(
+  () => import("./pages/Hod/Project/ProjectDetails"));
 const HodResources = lazy(() => import("./pages/Hod/Resources/Resource"));
 const HodTeam = lazy(() => import("./pages/Hod/Team/Team"));
 const HodCreateProject = lazy(
@@ -61,6 +64,10 @@ const router = createBrowserRouter([
         element: <HodProject />,
       },
       {
+        path: "projects/:projectId",
+        element: <ProjectDetails />,
+      },
+      {
         path: "resources",
         element: <HodResources />,
       },
@@ -95,6 +102,10 @@ const router = createBrowserRouter([
       {
         path: "conflict",
         element: <HodConflict />,
+      },
+      {
+        path: "conflicts/:conflictId",
+        element: <Conflict />,
       },
     ],
   },
