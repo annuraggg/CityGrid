@@ -8,7 +8,10 @@ const getProject = async (c: Context) => {
   const id = c.req.param("id");
 
   try {
-    const project = await Project.findById(id).lean();
+    const project = await Project.findById(id)
+      .populate("documents")
+      .populate("manager")
+      .lean();
     if (!project) {
       return sendError(c, 404, "Project not found");
     }
@@ -21,7 +24,10 @@ const getProject = async (c: Context) => {
 
 const getProjects = async (c: Context) => {
   try {
-    const projects = await Project.find().lean();
+    const projects = await Project.find()
+      .populate("documents")
+      .populate("manager")
+      .lean();
     return sendSuccess(c, 200, "Projects fetched successfully", projects);
   } catch (error) {
     logger.error(error as string);

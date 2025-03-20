@@ -1,7 +1,7 @@
 import ax from "@/config/axios";
 import IProject from "@/types/Project";
 import { useAuth } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
@@ -31,8 +32,10 @@ const ViewProject = () => {
   const [project, setProject] = useState<IProject>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
     setLoading(true);
 
@@ -47,7 +50,65 @@ const ViewProject = () => {
         setError("Failed to load project details");
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchProject();
   }, []);
+
+  const uploadDoc = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const pid = window.location.pathname.split("/").pop();
+
+    const formData = new FormData();
+    formData.append("document", file);
+    formData.append("project", pid!);
+
+    setUploading(true);
+
+    try {
+      await axios.post(`documents`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Document uploaded successfully");
+
+      // Refresh project data
+      fetchProject();
+    } catch (err) {
+      console.error("Error uploading document:", err);
+      toast.error("Failed to upload document");
+    } finally {
+      setUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const downloadFile = (id: string) => {
+    axios
+      .get(`documents/${id}/${project?._id}`)
+      .then((res) => {
+        window.open(res.data.data.url, "_blank");
+      })
+      .catch((err) => {
+        console.error("Error downloading file:", err);
+        toast.error("Failed to download file");
+      });
+  };
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -71,6 +132,15 @@ const ViewProject = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.ppt,.pptx"
+      />
+
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
@@ -181,10 +251,11 @@ const ViewProject = () => {
                       {project.documents.map((doc, index) => (
                         <div
                           key={index}
-                          className="flex items-center p-3 border rounded-lg hover:bg-accent"
+                          className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                          onClick={() => downloadFile(doc.id)}
                         >
                           <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{doc}</span>
+                          <span>{doc.name}</span>
                         </div>
                       ))}
                     </div>
@@ -196,8 +267,13 @@ const ViewProject = () => {
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Upload Document
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={uploadDoc}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Uploading..." : "Upload Document"}
                   </Button>
                 </CardFooter>
               </Card>
@@ -251,9 +327,9 @@ const ViewProject = () => {
                 <p className="text-sm font-medium mb-1">Project Manager</p>
                 <div className="flex items-center gap-2 p-3 border rounded-lg">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                    {project.manager.charAt(0).toUpperCase()}
+                    {project.manager._id.charAt(0).toUpperCase()}
                   </div>
-                  <span>{project.manager}</span>
+                  <span>{project.manager._id}</span>
                 </div>
               </div>
 

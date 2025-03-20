@@ -5,7 +5,7 @@ const ProjectSchema = new mongoose.Schema({
   manager: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   description: { type: String, required: true },
   department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
-  documents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Docuemnt" }],
+  documents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Document" }],
   resources: [{ type: mongoose.Schema.Types.ObjectId, ref: "Resource" }],
   schedule: {
     type: {
