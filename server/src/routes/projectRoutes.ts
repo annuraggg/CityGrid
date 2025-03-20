@@ -4,6 +4,7 @@ const app = new Hono();
 
 app.post("/", projectController.createProject);
 app.get("/", projectController.getProjects);
+app.get("/manager", projectController.getManagerProjects);
 app.get("/department/:departmentId", projectController.getDepartmentProjects);
 app.get("/:id", projectController.getProject);
 app.put("/:id", projectController.updateProject);

@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
 import clerkClient from "../config/clerk.js";
+import PendingInvite from "../models/PendingInvite.js";
 
 const userCreated = async (c: Context) => {
   const { data } = await c.req.json();
@@ -12,13 +13,31 @@ const userCreated = async (c: Context) => {
   );
 
   try {
-    const user = await User.create({
+    const pendingUser = await PendingInvite.findOne({
+      email: email.email_address,
+    });
+    if (!pendingUser) {
+      return sendError(c, 404, "User not found");
+    }
+
+    const { department, role } = pendingUser;
+
+    const u = await User.create({
       clerkId: id,
+      department,
+      role,
+    });
+
+    await PendingInvite.deleteOne({
       email: email.email_address,
     });
 
-    await clerkClient.users.updateUser(id, {
-      publicMetadata: { _id: user._id },
+    clerkClient.users.updateUser(id, {
+      publicMetadata: {
+        department,
+        role,
+        _id: u._id,
+      },
     });
 
     return sendSuccess(c, 200, "User created successfully");

@@ -7,7 +7,7 @@ const ConflictSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
     },
-    status: { type: ["pending", "resolved"], default: "pending" },
+    status: { type: String, enum: ["pending", "resolved"], default: "pending" },
   },
   { timestamps: true }
 );

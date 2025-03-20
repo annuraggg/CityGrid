@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import Project from "../models/Project.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
+import User from "../models/User.js";
 
 const getProject = async (c: Context) => {
   const id = c.req.param("id");
@@ -29,10 +30,18 @@ const getProjects = async (c: Context) => {
 };
 
 const createProject = async (c: Context) => {
-  const { data } = await c.req.json();
+  const data = await c.req.json();
 
   try {
-    const project = await Project.create(data);
+    const user = await User.findById(c.get("auth")?._id);
+    if (!user) {
+      return sendError(c, 404, "User not found");
+    }
+    const project = await Project.create({
+      ...data,
+      manager: c.get("auth")?._id,
+      department: user?.department,
+    });
     return sendSuccess(c, 200, "Project created successfully", project);
   } catch (error) {
     logger.error(error as string);
@@ -83,6 +92,18 @@ const getDepartmentProjects = async (c: Context) => {
   }
 };
 
+const getManagerProjects = async (c: Context) => {
+  const manager = c.get("auth")?._id;
+  try {
+    const projects = await Project.find({ manager }).lean();
+    console.log(projects);
+    return sendSuccess(c, 200, "Projects fetched successfully", projects);
+  } catch (error) {
+    logger.error(error as string);
+    return sendError(c, 500, "Failed to fetch projects");
+  }
+};
+
 export default {
   getProject,
   getProjects,
@@ -90,4 +111,5 @@ export default {
   updateProject,
   deleteProject,
   getDepartmentProjects,
+  getManagerProjects,
 };

@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import clerkClient from "../config/clerk.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import PendingInvite from "../models/PendingInvite.js";
+import User from "../models/User.js";
 
 const inviteProjectManager = async (c: Context) => {
   try {
@@ -33,7 +34,6 @@ const inviteProjectManager = async (c: Context) => {
       email,
       department,
       role: "pm",
-      redirectUrl: "http://localhost:5173/invite/pm",
     });
     await newPendingInvite.save();
 
@@ -68,7 +68,6 @@ const inviteHod = async (c: Context) => {
         department,
         role: "hod",
       },
-      redirectUrl: "http://localhost:5173/invite/hod",
     });
 
     const newPendingInvite = new PendingInvite({
@@ -84,7 +83,25 @@ const inviteHod = async (c: Context) => {
   }
 };
 
+const onboardUser = async (c: Context) => {
+  try {
+    const auth = c.get("auth");
+
+    const clerkUser = await clerkClient.users.getUser(auth.userId);
+    if (!clerkUser) {
+      return sendError(c, 404, "User not found");
+    }
+
+    const role = clerkUser.publicMetadata.role;
+
+    return sendSuccess(c, 201, "User onboarded successfully", role);
+  } catch {
+    return sendError(c, 500, "Internal Server Error");
+  }
+};
+
 export default {
   inviteProjectManager,
   inviteHod,
+  onboardUser,
 };

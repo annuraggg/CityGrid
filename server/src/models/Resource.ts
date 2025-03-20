@@ -8,7 +8,11 @@ const ResourceSchema = new mongoose.Schema(
     description: { type: String, required: true },
     department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
     sharedWith: [{ type: mongoose.Schema.Types.ObjectId, ref: "Project" }],
-    status: { type: ["pending", "dispatched", "delivered"], default: "pending" },
+    status: {
+      type: String,
+      enum: ["pending", "dispatched", "delivered"],
+      default: "pending",
+    },
     photo: { type: String },
   },
   { timestamps: true }

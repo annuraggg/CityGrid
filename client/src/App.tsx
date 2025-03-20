@@ -1,13 +1,10 @@
-import { Suspense, lazy, useEffect } from "react";
-import { createBrowserRouter, Router, RouterProvider } from "react-router-dom";
-import {
-  RedirectToSignIn,
-  SignedIn,
-  SignedOut,
-  useUser,
-} from "@clerk/clerk-react";
+import { lazy } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import HodLayout from "./components/layout/HodLayout";
+import ProjectManagerLayout from "./components/layout/ProjectManagerLayout";
+import Invite from "./pages/Invite/Invite";
+import ViewProject from "./pages/ProjectManager/Project/ViewProject";
 
 //hod imports
 const HodDashboard = lazy(() => import("./pages/Hod/Dashboard/Dashboard"));
@@ -46,8 +43,15 @@ const ProjectManagerConflict = lazy(
 const ProjectManagerResources = lazy(
   () => import("./pages/ProjectManager/Resources/Resources")
 );
+const ProjectCreate = lazy(
+  () => import("./pages/ProjectManager/Project/Create")
+);
 
 const router = createBrowserRouter([
+  {
+    path: "/invite",
+    element: <Invite />,
+  },
   {
     path: "/hod",
     element: <HodLayout />,
@@ -96,6 +100,22 @@ const router = createBrowserRouter([
         path: "conflict",
         element: <HodConflict />,
       },
+    ],
+  },
+  {
+    path: "/project-manager",
+    element: <ProjectManagerLayout />,
+    children: [
+      { path: "", element: <ProjectManagerDashboard /> },
+      { path: "projects", element: <ProjectManagerProject /> },
+      { path: "projects/:id", element: <ViewProject /> },
+      { path: "projects/create", element: <ProjectCreate /> },
+      { path: "conflicts", element: <ProjectManagerConflict /> },
+      { path: "conflicts/:id", element: <ProjectManagerConflict /> },
+      { path: "resources", element: <ProjectManagerResources /> },
+      { path: "resources/:id", element: <ProjectManagerResources /> },
+      { path: "resources/:id/track", element: <ProjectManagerResources /> },
+      { path: "notifications", element: <ProjectManagerNotifications /> },
     ],
   },
 ]);
