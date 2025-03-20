@@ -22,303 +22,298 @@ import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import ax from "@/config/axios";
 import { toast } from "sonner";
+import { Plus, Search, UserPlus, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, Users, BriefcaseBusiness, Mail } from "lucide-react";
 
 const Team = () => {
-  const [newPMEmail, setNewPMEmail] = useState("");
-  const [newHODEmail, setNewHODEmail] = useState("");
-  const [pmAddOpen, setPMAddOpen] = useState(false);
-  const [hodAddOpen, setHODAddOpen] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberRole, setNewMemberRole] = useState("project-manager");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { getToken } = useAuth();
   const axios = ax(getToken);
 
-  // Sample data - replace with actual data from your API
+  const addTeamMember = async () => {
+    axios
+      .post(`/invites/${newMemberRole}`, { email: newMemberEmail })
+      .then(() => {
+        toast.success(`${newMemberRole === "project-manager" ? "Project Manager" : "Head of Department"} invited successfully`);
+        setDialogOpen(false);
+        setNewMemberEmail("");
+      })
+      .catch(() => {
+        toast.error(`Failed to invite ${newMemberRole === "project-manager" ? "Project Manager" : "Head of Department"}`);
+      });
+  };
+
   const projectManagers = [
-    { id: 1, name: "John Doe", department: "IT", status: "active" },
-    { id: 2, name: "Jane Doe", department: "HR", status: "active" },
-    { id: 3, name: "Robert Smith", department: "Finance", status: "pending" },
+    { id: 1, name: "John Doe", department: "IT", email: "john.doe@example.com", status: "Active", projects: 5 },
+    { id: 2, name: "Jane Doe", department: "HR", email: "jane.doe@example.com", status: "Active", projects: 3 },
+    { id: 3, name: "Robert Smith", department: "Marketing", email: "robert.smith@example.com", status: "On Leave", projects: 2 },
+    { id: 4, name: "Emily Johnson", department: "Finance", email: "emily.j@example.com", status: "Active", projects: 4 },
+    { id: 5, name: "Michael Brown", department: "Operations", email: "m.brown@example.com", status: "Active", projects: 7 },
   ];
 
-  const hodMembers = [
-    { id: 1, name: "John Doe", department: "IT", status: "active" },
-    { id: 2, name: "Jane Doe", department: "HR", status: "active" },
-    {
-      id: 3,
-      name: "Alice Johnson",
-      department: "Marketing",
-      status: "pending",
-    },
+  const hods = [
+    { id: 1, name: "Jennifer White", department: "IT", email: "j.white@example.com", status: "Active", teamSize: 15 },
+    { id: 2, name: "David Wilson", department: "HR", email: "d.wilson@example.com", status: "Active", teamSize: 8 },
+    { id: 3, name: "Sarah Miller", department: "Marketing", email: "s.miller@example.com", status: "Active", teamSize: 12 },
+    { id: 4, name: "James Taylor", department: "Finance", email: "j.taylor@example.com", status: "On Leave", teamSize: 7 },
+    { id: 5, name: "Lisa Anderson", department: "Operations", email: "l.anderson@example.com", status: "Active", teamSize: 20 },
   ];
 
-  const addPM = async () => {
-    axios
-      .post("/invites/project-manager", { email: newPMEmail })
-      .then(() => {
-        toast.success("Project Manager invited successfully");
-        setPMAddOpen(false);
-        setNewPMEmail("");
-      })
-      .catch(() => {
-        toast.error("Failed to invite Project Manager");
-      });
-  };
+  const filteredPMs = projectManagers.filter(
+    pm => pm.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          pm.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          pm.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const addHOD = async () => {
-    axios
-      .post("/invites/hod", { email: newHODEmail })
-      .then(() => {
-        toast.success("Head of Department invited successfully");
-        setHODAddOpen(false);
-        setNewHODEmail("");
-      })
-      .catch(() => {
-        toast.error("Failed to invite Head of Department");
-      });
-  };
-
-  // Function to render status badge
-  const StatusBadge = ({ status }) => {
-    if (status === "active") {
-      return <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>;
-    } else if (status === "pending") {
-      return (
-        <Badge className="bg-amber-500 hover:bg-amber-600">
-          Pending Invite
-        </Badge>
-      );
-    }
-    return null;
-  };
+  const filteredHODs = hods.filter(
+    hod => hod.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           hod.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           hod.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="p-8 w-full max-w-7xl mx-auto">
-      <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-none shadow-md">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Users className="text-blue-600" size={28} />
-            Team Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-600">
-            Manage your organization's team members, send invitations, and track
-            statuses.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="project-managers" className="w-full">
-        <div className="flex justify-between items-center mb-6">
-          <TabsList className="bg-slate-100">
-            <TabsTrigger
-              value="project-managers"
-              className="data-[state=active]:bg-white"
-            >
-              Project Managers
-            </TabsTrigger>
-            <TabsTrigger value="hod" className="data-[state=active]:bg-white">
-              Head of Departments
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex gap-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-              <Input
-                type="search"
-                placeholder="Search members..."
-                className="pl-8 w-64 bg-white"
-              />
-            </div>
-
-            <TabsContent value="project-managers" className="mt-0">
-              <Dialog open={pmAddOpen} onOpenChange={setPMAddOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <UserPlus className="mr-2 h-4 w-4" /> Add Project Manager
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">
-                      Add Project Manager
-                    </DialogTitle>
-                    <DialogDescription>
-                      Please enter the email address of the Project Manager you
-                      want to invite.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-6 w-full">
-                      <Label htmlFor="pm-email" className="text-right w-64">
-                        Email Address
-                      </Label>
-                      <div className="col-span-3 relative">
-                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                        <Input
-                          id="pm-email"
-                          value={newPMEmail}
-                          onChange={(e) => setNewPMEmail(e.target.value)}
-                          className="pl-8"
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      onClick={addPM}
-                      className="bg-blue-600 hover:bg-blue-700"
+    <div className="w-full h-full">
+      <div className="bg-gray-50 border-b p-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Team Management</h1>
+            <p className="text-gray-500 mt-1">Manage your project managers and department heads</p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <UserPlus size={16} />
+                <span>Add Team Member</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add Team Member</DialogTitle>
+                <DialogDescription>
+                  Invite a new team member by entering their email address.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="role" className="text-right">
+                    Role
+                  </Label>
+                  <div className="col-span-3">
+                    <select 
+                      id="role"
+                      className="w-full rounded-md border border-input p-2"
+                      value={newMemberRole}
+                      onChange={(e) => setNewMemberRole(e.target.value)}
                     >
-                      Send Invitation
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </TabsContent>
-
-            <TabsContent value="hod" className="mt-0">
-              <Dialog open={hodAddOpen} onOpenChange={setHODAddOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <UserPlus className="mr-2 h-4 w-4" /> Add HOD
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">
-                      Add Head of Department
-                    </DialogTitle>
-                    <DialogDescription>
-                      Please enter the email address of the Head of Department
-                      you want to invite.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-6 w-full">
-                      <Label htmlFor="hod-email" className="text-right w-64">
-                        Email Address
-                      </Label>
-                      <div className="col-span-3 relative">
-                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                        <Input
-                          id="hod-email"
-                          value={newHODEmail}
-                          onChange={(e) => setNewHODEmail(e.target.value)}
-                          className="pl-8"
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                    </div>
+                      <option value="project-manager">Project Manager</option>
+                      <option value="hod">Head of Department</option>
+                    </select>
                   </div>
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      onClick={addHOD}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Send Invitation
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </TabsContent>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@company.com"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" onClick={addTeamMember}>
+                  Send Invitation
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="mb-6 flex space-x-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              placeholder="Search team members by name, department, or email..."
+              className="pl-10 w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline">Export</Button>
+            <Button variant="outline">Filter</Button>
           </div>
         </div>
 
-        <TabsContent value="project-managers" className="mt-0">
-          <Card className="shadow-md border-none">
-            <CardHeader className="bg-blue-50 flex flex-row items-center justify-between p-4 border-b">
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <BriefcaseBusiness className="text-blue-600" size={20} />
-                Project Managers
-              </CardTitle>
-              <span className="text-sm text-slate-500 font-medium">
-                {projectManagers.length} members
-              </span>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-100">
-                  <TableRow>
-                    <TableHead className="w-16">ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projectManagers.map((pm) => (
-                    <TableRow key={pm.id} className="hover:bg-slate-50">
-                      <TableCell className="font-medium">{pm.id}</TableCell>
-                      <TableCell>{pm.name}</TableCell>
-                      <TableCell>{pm.department}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={pm.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <Tabs defaultValue="project-managers" className="w-full">
+          <TabsList className="grid grid-cols-2 w-64 mb-6">
+            <TabsTrigger value="project-managers">Project Managers</TabsTrigger>
+            <TabsTrigger value="hods">Department Heads</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="hod" className="mt-0">
-          <Card className="shadow-md border-none">
-            <CardHeader className="bg-blue-50 flex flex-row items-center justify-between p-4 border-b">
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <BriefcaseBusiness className="text-blue-600" size={20} />
-                Head of Departments
-              </CardTitle>
-              <span className="text-sm text-slate-500 font-medium">
-                {hodMembers.length} members
-              </span>
-            </CardHeader>
-            <CardContent className="p-0">
+          <TabsContent value="project-managers" className="w-full">
+            <div className="bg-white rounded-md border shadow-sm w-full overflow-hidden">
               <Table>
-                <TableHeader className="bg-slate-100">
+                <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="w-16">ID</TableHead>
+                    <TableHead className="w-12">ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Department</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Projects</TableHead>
+                    <TableHead className="text-right w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {hodMembers.map((hod) => (
-                    <TableRow key={hod.id} className="hover:bg-slate-50">
-                      <TableCell className="font-medium">{hod.id}</TableCell>
-                      <TableCell>{hod.name}</TableCell>
-                      <TableCell>{hod.department}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={hod.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
+                  {filteredPMs.length > 0 ? (
+                    filteredPMs.map((pm) => (
+                      <TableRow key={pm.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{pm.id}</TableCell>
+                        <TableCell>{pm.name}</TableCell>
+                        <TableCell>{pm.department}</TableCell>
+                        <TableCell>{pm.email}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            pm.status === "Active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {pm.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{pm.projects}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon">
+                              <Edit size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-32 text-center text-gray-500">
+                        {searchQuery ? "No project managers match your search" : "No project managers added yet"}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing {filteredPMs.length} of {projectManagers.length} project managers
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+                <Button variant="outline" size="sm">Next</Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="hods" className="w-full">
+            <div className="bg-white rounded-md border shadow-sm w-full overflow-hidden">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    <TableHead className="w-12">ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Team Size</TableHead>
+                    <TableHead className="text-right w-24">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredHODs.length > 0 ? (
+                    filteredHODs.map((hod) => (
+                      <TableRow key={hod.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{hod.id}</TableCell>
+                        <TableCell>{hod.name}</TableCell>
+                        <TableCell>{hod.department}</TableCell>
+                        <TableCell>{hod.email}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            hod.status === "Active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {hod.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{hod.teamSize}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon">
+                              <Edit size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-32 text-center text-gray-500">
+                        {searchQuery ? "No HODs match your search" : "No HODs added yet"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing {filteredHODs.length} of {hods.length} department heads
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+                <Button variant="outline" size="sm">Next</Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <div className="grid grid-cols-4 gap-6 p-6 mt-6">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <h3 className="text-lg font-medium">Total Team Members</h3>
+          <p className="text-3xl font-bold mt-2">{projectManagers.length + hods.length}</p>
+          <p className="text-sm text-gray-500 mt-2">Across all departments</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <h3 className="text-lg font-medium">Active Projects</h3>
+          <p className="text-3xl font-bold mt-2">{projectManagers.reduce((sum, pm) => sum + pm.projects, 0)}</p>
+          <p className="text-sm text-gray-500 mt-2">Managed by PMs</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <h3 className="text-lg font-medium">Total Departments</h3>
+          <p className="text-3xl font-bold mt-2">{new Set(hods.map(hod => hod.department)).size}</p>
+          <p className="text-sm text-gray-500 mt-2">Active departments</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <h3 className="text-lg font-medium">Team Size</h3>
+          <p className="text-3xl font-bold mt-2">{hods.reduce((sum, hod) => sum + hod.teamSize, 0)}</p>
+          <p className="text-sm text-gray-500 mt-2">Total employees</p>
+        </div>
+      </div>
     </div>
   );
 };
