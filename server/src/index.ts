@@ -1,15 +1,15 @@
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
+import "dotenv/config";
+import app from "./config/init.js";
+import logger from "./utils/logger.js";
 
-const app = new Hono()
+const port = parseInt(process.env.PORT!);
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+app.get("/health", (c) => {
+  return c.json({ status: "ok", version: process.env.VERSION || "1.0.0" }); 
+});
 
-serve({
-  fetch: app.fetch,
-  port: 3000
-}, (info) => {
-  console.log(`Server is running on http://localhost:${info.port}`)
-})
+app.get("/*", (c) => {
+  return c.json({ status: "not found" }, 404);
+});
+
+logger.info(`Server is running on port ${port}`);
