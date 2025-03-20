@@ -18,9 +18,10 @@ import userRoutes from "../routes/userRoutes.js";
 import conflictRoutes from "../routes/conflictRoutes.js";
 import departmentRoutes from "../routes/departmentRoutes.js";
 import documentRoutes from "../routes/documentRoutes.js";
-import notificationRoutes from "../routes/NotificationRoutes.js";
-import projectRoutes from "../routes/ProjectRoutes.js";
+import notificationRoutes from "../routes/notificationRoutes.js";
+import projectRoutes from "../routes/projectRoutes.js";
 import resourceRoutes from "../routes/resourceRoutes.js";
+import inviteRoutes from "../routes/inviteRoutes.js";
 
 const app = new Hono();
 serve({
@@ -41,5 +42,6 @@ app.route("/documents", documentRoutes);
 app.route("/notifications", notificationRoutes);
 app.route("/projects", projectRoutes);
 app.route("/resources", resourceRoutes);
+app.route("/invites", inviteRoutes);
 
 export default app;

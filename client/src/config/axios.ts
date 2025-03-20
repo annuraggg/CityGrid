@@ -5,6 +5,8 @@ const ax = (getToken?: any) => {
     baseURL: import.meta.env.VITE_API_URL as string,
   });
 
+  console.log(import.meta.env.VITE_API_URL);
+
   if (getToken) {
     api.interceptors.request.use(async (request) => {
       api.defaults.baseURL = import.meta.env.VITE_API_URL as string;
