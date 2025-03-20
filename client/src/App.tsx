@@ -56,7 +56,46 @@ const router = createBrowserRouter([
         path: "",
         element: <HodDashboard />,
       },
- 
+      {
+        path: "projects",
+        element: <HodProject />,
+      },
+      {
+        path: "resources",
+        element: <HodResources />,
+      },
+      {
+        path: "team",
+        element: <HodTeam />,
+      },
+      {
+        path: "notifications",
+        element: <HodNotifications />,
+      },
+      {
+        path: "onboarding",
+        element: <HodOnboarding />,
+      },
+      {
+        path: "create-project",
+        element: <HodCreateProject />,
+      },
+      {
+        path: "create-resource",
+        element: <HodCreateResource />,
+      },
+      {
+        path: "market",
+        element: <HodMarket />,
+      },
+      {
+        path: "share",
+        element: <HodShare />,
+      },
+      {
+        path: "conflict",
+        element: <HodConflict />,
+      },
     ],
   },
 ]);
