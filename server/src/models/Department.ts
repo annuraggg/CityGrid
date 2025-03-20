@@ -7,7 +7,11 @@ const DepartmentSchema = new mongoose.Schema(
     projects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Project" }],
     departments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Department" }],
     hod: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    inviteStatus: { type: ["expired", "pending", "accepted"], default: "pending" },
+    inviteStatus: {
+      type: String,
+      enum: ["expired", "pending", "accepted"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );
