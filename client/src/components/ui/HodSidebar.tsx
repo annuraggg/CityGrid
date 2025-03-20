@@ -7,7 +7,6 @@ import {
     PieChart,
     Bell,
     Settings,
-    CreditCard,
     Blocks,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/clerk-react";
-import Resources from "@/pages/ProjectManager/Resources/Resources";
 
 interface NavItem {
     icon: React.ElementType;
@@ -34,7 +32,7 @@ const Sidebar = ({
     isMobile,
     onClose,
 }: {
-    isMobile: boolean;
+    isMobile?: boolean;
     onClose?: () => void;
 }) => {
     const topItems: NavItem[] = [
