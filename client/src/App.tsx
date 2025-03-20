@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import HodLayout from "./components/layout/HodLayout";
@@ -6,7 +6,9 @@ import ProjectManagerLayout from "./components/layout/ProjectManagerLayout";
 import Invite from "./pages/Invite/Invite";
 import ViewProject from "./pages/ProjectManager/Project/ViewProject";
 
-//hod imports
+const Loading = () => <div>Loading...</div>;
+
+// HOD imports
 const HodDashboard = lazy(() => import("./pages/Hod/Dashboard/Dashboard"));
 const HodComplaint = lazy(() => import("./pages/Hod/Complaints/Complaint"));
 const HodNotifications = lazy(
@@ -15,8 +17,7 @@ const HodNotifications = lazy(
 const Conflict = lazy(() => import("./pages/Hod/Project/Conflict"));
 const HodOnboarding = lazy(() => import("./pages/Hod/OnBoarding/Onboarding"));
 const HodProject = lazy(() => import("./pages/Hod/Project/Project"));
-const ProjectDetails = lazy(
-  () => import("./pages/Hod/Project/ProjectDetails"));
+const ProjectDetails = lazy(() => import("./pages/Hod/Project/ProjectDetails"));
 const HodResources = lazy(() => import("./pages/Hod/Resources/Resource"));
 const HodTeam = lazy(() => import("./pages/Hod/Team/Team"));
 const HodCreateProject = lazy(
@@ -27,7 +28,7 @@ const HodCreateResource = lazy(() => import("./pages/Hod/Resources/Create"));
 const HodMarket = lazy(() => import("./pages/Hod/Resources/Market"));
 const HodShare = lazy(() => import("./pages/Hod/Resources/Share"));
 
-//projectmanager imports
+// Project Manager imports
 const ProjectManagerDashboard = lazy(
   () => import("./pages/ProjectManager/Dashboard/Dashboard")
 );
@@ -61,55 +62,107 @@ const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <HodDashboard />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodDashboard />
+          </Suspense>
+        ),
       },
       {
         path: "projects",
-        element: <HodProject />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodProject />
+          </Suspense>
+        ),
       },
       {
         path: "projects/:projectId",
-        element: <ProjectDetails />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectDetails />
+          </Suspense>
+        ),
       },
       {
         path: "resources",
-        element: <HodResources />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodResources />
+          </Suspense>
+        ),
       },
       {
         path: "team",
-        element: <HodTeam />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodTeam />
+          </Suspense>
+        ),
       },
       {
         path: "notifications",
-        element: <HodNotifications />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodNotifications />
+          </Suspense>
+        ),
       },
       {
         path: "onboarding",
-        element: <HodOnboarding />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodOnboarding />
+          </Suspense>
+        ),
       },
       {
         path: "create-project",
-        element: <HodCreateProject />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodCreateProject />
+          </Suspense>
+        ),
       },
       {
         path: "create-resource",
-        element: <HodCreateResource />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodCreateResource />
+          </Suspense>
+        ),
       },
       {
         path: "market",
-        element: <HodMarket />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodMarket />
+          </Suspense>
+        ),
       },
       {
         path: "share",
-        element: <HodShare />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodShare />
+          </Suspense>
+        ),
       },
       {
         path: "conflict",
-        element: <HodConflict />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HodConflict />
+          </Suspense>
+        ),
       },
       {
         path: "conflicts/:conflictId",
-        element: <Conflict />,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <Conflict />
+          </Suspense>
+        ),
       },
     ],
   },
@@ -117,16 +170,86 @@ const router = createBrowserRouter([
     path: "/project-manager",
     element: <ProjectManagerLayout />,
     children: [
-      { path: "", element: <ProjectManagerDashboard /> },
-      { path: "projects", element: <ProjectManagerProject /> },
-      { path: "projects/:id", element: <ViewProject /> },
-      { path: "projects/create", element: <ProjectCreate /> },
-      { path: "conflicts", element: <ProjectManagerConflict /> },
-      { path: "conflicts/:id", element: <ProjectManagerConflict /> },
-      { path: "resources", element: <ProjectManagerResources /> },
-      { path: "resources/:id", element: <ProjectManagerResources /> },
-      { path: "resources/:id/track", element: <ProjectManagerResources /> },
-      { path: "notifications", element: <ProjectManagerNotifications /> },
+      {
+        path: "",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: "projects",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerProject />
+          </Suspense>
+        ),
+      },
+      {
+        path: "projects/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ViewProject />
+          </Suspense>
+        ),
+      },
+      {
+        path: "projects/create",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectCreate />
+          </Suspense>
+        ),
+      },
+      {
+        path: "conflicts",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerConflict />
+          </Suspense>
+        ),
+      },
+      {
+        path: "conflicts/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerConflict />
+          </Suspense>
+        ),
+      },
+      {
+        path: "resources",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerResources />
+          </Suspense>
+        ),
+      },
+      {
+        path: "resources/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerResources />
+          </Suspense>
+        ),
+      },
+      {
+        path: "resources/:id/track",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerResources />
+          </Suspense>
+        ),
+      },
+      {
+        path: "notifications",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ProjectManagerNotifications />
+          </Suspense>
+        ),
+      },
     ],
   },
 ]);

@@ -24,7 +24,9 @@ const userCreated = async (c: Context) => {
 
     const u = await User.create({
       clerkId: id,
+      email: email.email_address,
       department,
+      name: data.first_name + " " + data.last_name,
       role,
     });
 
@@ -90,8 +92,20 @@ const userUpdated = async (c: Context) => {
   }
 };
 
+const getTeam = async (c: Context) => {
+  const department = c.req.param("dept");
+  try {
+    const users = await User.find({ department }).populate("department");
+    return sendSuccess(c, 200, "Team fetched successfully", users);
+  } catch (error) {
+    logger.error(error as string);
+    return sendError(c, 500, "Failed to get team");
+  }
+};
+
 export default {
   userCreated,
   userDeleted,
   userUpdated,
+  getTeam,
 };

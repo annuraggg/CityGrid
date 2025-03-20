@@ -1,349 +1,438 @@
-import { useParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import ax from "@/config/axios";
+import { useAuth } from "@clerk/clerk-react";
+import { useEffect, useState, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Download, 
-  MapPin, 
-  Building, 
-  CalendarClock, 
-  FileText, 
-  ExternalLink, 
-  Clock 
+import {
+  Calendar,
+  Clock,
+  FileText,
+  MapPin,
+  Users,
+  Briefcase,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import ExtendedProject from "@/types/ExtendedProject";
 
-type ProjectDetails = {
-  id: string;
-  name: string;
-  department: string;
-  status: "active" | "completed" | "delayed" | "planning";
-  progress: number;
-  location: string;
-  lat: string;
-  long: string;
-  description: string;
-  documents: { name: string; link: string; type: string; date: string }[];
-  schedule: { label: string; date: string; checked: boolean }[];
-  contacts: { name: string; role: string; email: string }[];
-};
+const ViewProject = () => {
+  const { getToken } = useAuth();
+  const axios = ax(getToken);
+  const [project, setProject] = useState<ExtendedProject>({} as ExtendedProject);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-const ProjectDetails: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const fetchProject = () => {
+    const pid = window.location.pathname.split("/").pop();
+    setLoading(true);
 
-  // Expanded mock data for the project
-  const project: ProjectDetails = {
-    id: "PRJ-101",
-    name: "Metro Waterline Upgrade",
-    department: "Water Supply",
-    status: "active",
-    progress: 35,
-    location: "Sector 12, Mumbai",
-    lat: "19.1234",
-    long: "72.8765",
-    description: "Expansion of the metro water pipeline for increased urban demand. This project aims to upgrade the existing infrastructure to support the growing population in the eastern suburbs of Mumbai.",
-    documents: [
-      { name: "Project Proposal", link: "#", type: "PDF", date: "10-Feb-2025" },
-      { name: "Engineering Plan", link: "#", type: "DWG", date: "02-Mar-2025" },
-      { name: "Budget Report", link: "#", type: "XLSX", date: "05-Mar-2025" },
-      { name: "Environmental Impact Study", link: "#", type: "PDF", date: "01-Mar-2025" },
-    ],
-    schedule: [
-      { label: "Planning Phase", date: "01-Feb-2025", checked: true },
-      { label: "Approval", date: "05-Mar-2025", checked: true },
-      { label: "Start Date", date: "12-Mar-2025", checked: true },
-      { label: "Phase 1 Completion", date: "15-May-2025", checked: false },
-      { label: "Phase 2 Completion", date: "15-Jun-2025", checked: false },
-      { label: "Est. End Date", date: "30-Jun-2025", checked: false },
-      { label: "Extended End Date", date: "15-Jul-2025", checked: false },
-    ],
-    contacts: [
-      { name: "Priya Sharma", role: "Project Manager", email: "priya.sharma@example.com" },
-      { name: "Rajesh Kumar", role: "Lead Engineer", email: "rajesh.kumar@example.com" },
-      { name: "Anita Desai", role: "Budget Analyst", email: "anita.desai@example.com" },
-    ]
+    axios
+      .get("projects/" + pid)
+      .then((res) => {
+        console.log(res.data.data)
+        setProject(res.data.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load project details");
+        setLoading(false);
+      });
   };
 
+  useEffect(() => {
+    fetchProject();
+  }, []);
 
-  const statusColors = {
-    active: "bg-green-100 text-green-800",
-    completed: "bg-blue-100 text-blue-800",
-    delayed: "bg-amber-100 text-amber-800",
-    planning: "bg-purple-100 text-purple-800"
-  };
-
-  const getDocTypeIcon = (type: string) => {
-    switch(type.toLowerCase()) {
-      case 'pdf': return "bg-red-100 text-red-800";
-      case 'dwg': return "bg-blue-100 text-blue-800";
-      case 'xlsx': return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+  const uploadDoc = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
-  const calculateDaysRemaining = () => {
-    const endDate = new Date("2025-07-15");
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const pid = window.location.pathname.split("/").pop();
+
+    const formData = new FormData();
+    formData.append("document", file);
+    formData.append("project", pid!);
+
+    setUploading(true);
+
+    try {
+      await axios.post(`documents`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Document uploaded successfully");
+
+      // Refresh project data
+      fetchProject();
+    } catch (err) {
+      console.error("Error uploading document:", err);
+      toast.error("Failed to upload document");
+    } finally {
+      setUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
-  const daysRemaining = calculateDaysRemaining();
+  const downloadFile = (id: string) => {
+    axios
+      .get(`documents/${id}/${project?._id}`)
+      .then((res) => {
+        window.open(res.data.data.url, "_blank");
+      })
+      .catch((err) => {
+        console.error("Error downloading file:", err);
+        toast.error("Failed to download file");
+      });
+  };
+
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
+
+  if (!project) {
+    return <ErrorState message="Project not found" />;
+  }
+
+  // Format dates
+  const startDate = project.schedule?.start
+    ? format(new Date(project.schedule?.start), "MMMM dd, yyyy")
+    : "Not set";
+  const endDate = project.schedule?.end
+    ? format(new Date(project.schedule?.end), "MMMM dd, yyyy")
+    : "Not set";
 
   return (
-    <div className="w-full mx-auto p-4 bg-gray-50 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className="text-xs font-normal">
-                  {project.id}
-                </Badge>
-                <Badge className={`${statusColors[project.status]} border-0`}>
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                </Badge>
-              </div>
-              <h1 className="text-2xl font-bold mb-1">{project.name}</h1>
-              <div className="flex items-center text-gray-500 text-sm gap-4">
-                <div className="flex items-center gap-1">
-                  <Building className="h-4 w-4" />
-                  <span>{project.department}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{project.location}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-end">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">
-                  {daysRemaining} days remaining
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{project.progress}% Complete</span>
-                <Progress value={project.progress} className="w-24 h-2" />
-              </div>
-            </div>
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.ppt,.pptx"
+      />
+
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+          <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+            <Briefcase className="h-4 w-4" />
+            <span>{project.department?.name || "No Department"}</span>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline">Edit Project</Button>
+          <Button>Share Project</Button>
+        </div>
+      </div>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="mb-6 bg-white w-full justify-start rounded-lg p-1 border">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="mt-0 w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
-                <CardHeader className="bg-white pl-6">
-                  <CardTitle className="text-xl font-semibold">Project Description</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 pt-3">
-                  <p className="text-gray-700">{project.description}</p>
-                  
-                  <Separator className="my-6" />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-3">Timeline</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Start Date</span>
-                          <span className="text-sm font-medium">{project.schedule[2].date}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Original End Date</span>
-                          <span className="text-sm font-medium">{project.schedule[5].date}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Extended End Date</span>
-                          <span className="text-sm font-medium text-amber-600">{project.schedule[6].date}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-3">Key Contacts</h3>
-                      <div className="space-y-3">
-                        {project.contacts.slice(0, 2).map((contact, index) => (
-                          <div key={index} className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm font-medium">{contact.name}</p>
-                              <p className="text-xs text-gray-500">{contact.role}</p>
-                            </div>
-                            <Button variant="ghost" size="sm" className="h-8 gap-1">
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              <span className="text-xs">Contact</span>
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="documents">
+                Documents ({project.documents.length})
+              </TabsTrigger>
+              <TabsTrigger value="resources">
+                Resources ({project.resources.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview">
               <Card>
-                <CardHeader className="bg-white pl-6">
-                  <CardTitle className="text-xl font-semibold">Location</CardTitle>
+                <CardHeader>
+                  <CardTitle>Project Details</CardTitle>
+                  <CardDescription>Overview of {project.name}</CardDescription>
                 </CardHeader>
-                <CardContent className="p-6 pt-3">
-                  <div className="aspect-video bg-gray-100 rounded-md flex items-center justify-center mb-4">
-                    <MapPin className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">{project.location}</p>
-                    <p className="text-xs text-gray-500">
-                      Latitude: {project.lat}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Longitude: {project.long}
+                <CardContent className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Description</h3>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {project.description || "No description provided."}
                     </p>
                   </div>
-                  <Button className="w-full mt-4" variant="outline" size="sm">
-                    View on Map
-                  </Button>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Schedule</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-md">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Start Date</p>
+                          <p className="text-muted-foreground">{startDate}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-primary/10 rounded-md">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">End Date</p>
+                          <p className="text-muted-foreground">{endDate}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {project.schedule?.isRescheduled && (
+                      <Badge className="mt-2" variant="outline">
+                        Rescheduled
+                      </Badge>
+                    )}
+                  </div>
+
+                  {project.location && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Location</h3>
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-primary/10 rounded-md">
+                            <MapPin className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">
+                              Coordinates: {project.location.latitude},{" "}
+                              {project.location.longitude}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="documents" className="mt-0">
-            <Card>
-              <CardHeader className="bg-white p-6 pb-3">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl font-semibold">Project Documents</CardTitle>
-                  <Button size="sm" className="h-9">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Upload New
-                  </Button>
-                </div>
-                <CardDescription>
-                  Access all project documentation and files
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {project.documents.map((doc, index) => (
-                    <div 
-                      key={index} 
-                      className="flex justify-between items-center p-4 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary" className={`${getDocTypeIcon(doc.type)}`}>
-                          {doc.type}
-                        </Badge>
-                        <div>
-                          <p className="font-medium text-sm">{doc.name}</p>
-                          <p className="text-xs text-gray-500">Last updated: {doc.date}</p>
+            </TabsContent>
+
+            <TabsContent value="documents">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Documents</CardTitle>
+                  <CardDescription>
+                    All documents associated with this project
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {project.documents.length > 0 ? (
+                    <div className="space-y-2">
+                      {project.documents.map((doc, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                          onClick={() => downloadFile(doc._id)}
+                        >
+                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                          <span>{doc.name}</span>
                         </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="gap-2 ml-4">
-                        <Download className="h-3.5 w-3.5" />
-                        Download
-                      </Button>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                      <p>No documents available</p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={uploadDoc}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Uploading..." : "Upload Document"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="resources">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Resources</CardTitle>
+                  <CardDescription>
+                    Resources allocated to this project
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {project.resources.length > 0 ? (
+                    <div className="space-y-2">
+                      {project.resources.map((resource, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center p-3 border rounded-lg hover:bg-accent"
+                        >
+                          <Users className="h-5 w-5 mr-2 text-muted-foreground" />
+                          <span>{resource}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                      <p>No resources assigned</p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full">
+                    Add Resource
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Project Manager</p>
+                <div className="flex items-center gap-2 p-3 border rounded-lg">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {project.manager._id.charAt(0).toUpperCase()}
+                  </div>
+                  <span>{project.manager._id}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="schedule" className="mt-0">
-            <Card>
-              <CardHeader className="bg-white p-6 pb-3">
-                <CardTitle className="text-xl font-semibold">Project Timeline</CardTitle>
-                <CardDescription>
-                  Track the progress of project milestones
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="relative">
-                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                  <div className="space-y-6">
-                    {project.schedule.map((item, index) => (
-                      <div key={index} className="flex items-start gap-4 relative">
-                        <div className={`mt-0.5 h-8 w-8 rounded-full border flex items-center justify-center ${
-                          item.checked 
-                            ? "bg-blue-50 border-blue-200 text-blue-600" 
-                            : "bg-white border-gray-200 text-gray-400"
-                        }`}>
-                          <Checkbox 
-                            checked={item.checked} 
-                            id={`schedule-${index}`}
-                            className={item.checked ? "text-blue-600" : "text-gray-400"}
-                          />
-                        </div>
-                        <div className="bg-white border border-gray-100 rounded-lg p-4 w-full shadow-sm">
-                          <div className="flex justify-between items-center">
-                            <p className="font-medium">{item.label}</p>
-                            <Badge 
-                              variant={item.checked ? "secondary" : "outline"}
-                              className={item.checked ? "bg-green-100 text-green-800 border-0" : ""}
-                            >
-                              {item.checked ? "Completed" : "Pending"}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <CalendarClock className="h-3.5 w-3.5 text-gray-400" />
-                            <p className="text-sm text-gray-600">{item.date}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-1">Project ID</p>
+                <div className="p-3 border rounded-lg truncate font-mono text-sm text-muted-foreground">
+                  {project._id}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-1">Project Timeline</p>
+                <div className="p-3 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {calculateDuration(
+                        project.schedule?.start,
+                        project.schedule?.end
+                      )}
+                    </span>
+                  </div>
+                  <div className="w-full bg-secondary h-2 rounded-full">
+                    <div
+                      className="bg-primary h-2 rounded-full"
+                      style={{
+                        width: `${calculateProgress(
+                          project.schedule?.start,
+                          project.schedule?.end
+                        )}%`,
+                      }}
+                    ></div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="team" className="mt-0">
-            <Card>
-              <CardHeader className="bg-white p-6 pb-3">
-                <CardTitle className="text-xl font-semibold">Project Team</CardTitle>
-                <CardDescription>
-                  Team members and stakeholders involved in the project
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {project.contacts.map((contact, index) => (
-                    <Card key={index} className="border border-gray-100">
-                      <CardContent className="p-4 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4 mt-4">
-                          <span className="text-xl font-medium text-gray-500">
-                            {contact.name.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold">{contact.name}</h3>
-                        <p className="text-sm text-gray-500 mb-2">{contact.role}</p>
-                        <p className="text-xs text-blue-600">{contact.email}</p>
-                        <Button variant="outline" size="sm" className="mt-4 w-full">
-                          Contact
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProjectDetails;
+// Helper components
+const LoadingSkeleton = () => (
+  <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="mb-8">
+      <Skeleton className="h-10 w-1/3 mb-2" />
+      <Skeleton className="h-4 w-1/5" />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <Skeleton className="h-12 w-1/3 mb-4" />
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </div>
+      <div>
+        <Skeleton className="h-80 w-full rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ message }: { message: string }) => (
+  <div className="container mx-auto py-16 px-4 text-center">
+    <div className="bg-destructive/10 text-destructive p-4 rounded-lg inline-block mb-4">
+      <FileText className="h-12 w-12" />
+    </div>
+    <h2 className="text-2xl font-bold mb-2">{message}</h2>
+    <p className="text-muted-foreground mb-6">
+      Unable to display project information
+    </p>
+    <Button variant="outline">Go Back</Button>
+  </div>
+);
+
+// Helper functions
+const calculateDuration = (start: Date, end: Date): string => {
+  if (!start || !end) return "No timeline set";
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return `${diffDays} days`;
+};
+
+const calculateProgress = (start: Date, end: Date): number => {
+  if (!start || !end) return 0;
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const currentDate = new Date();
+
+  if (currentDate < startDate) return 0;
+  if (currentDate > endDate) return 100;
+
+  const totalDuration = endDate.getTime() - startDate.getTime();
+  const elapsedDuration = currentDate.getTime() - startDate.getTime();
+
+  return Math.round((elapsedDuration / totalDuration) * 100);
+};
+
+export default ViewProject;
