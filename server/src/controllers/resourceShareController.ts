@@ -4,6 +4,7 @@ import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
 import clerkClient from "../config/clerk.js";
 import Resource from "../models/Resource.js";
+import User from "../models/User.js";
 
 const createResourceShare = async (c: Context) => {
   try {
@@ -59,6 +60,29 @@ const getDepartmentShareRequests = async (c: Context) => {
   } catch (error) {
     return sendError(c, 500, "Internal Server Error");
   }
-};
+}
 
-export default { getDepartmentShareRequests, createResourceShare };
+const getDepartmentRequests = async (c: Context) => {
+  try {
+    const { department } = await c.req.json();
+
+    const resourceShares = await ResourceShare.find({
+      sharedWith: department
+    })
+      .populate("resource")
+      .populate("sharedWith");
+
+    console.log(resourceShares);
+
+    return sendSuccess(
+      c,
+      200,
+      "Resource shares fetched successfully",
+      resourceShares
+    );
+  } catch (error) {
+    return sendError(c, 500, "Internal Server Error");
+  }
+}
+
+export default { getDepartmentShareRequests, createResourceShare, getDepartmentRequests };

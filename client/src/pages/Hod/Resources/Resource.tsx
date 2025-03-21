@@ -52,6 +52,7 @@ const ResourceManagement: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [myResources, setMyResources] = useState<Resource[]>([]);
+  const [requiredSignatures, setRequiredSignatures] = useState<ResourceShare[]>([])
   const [marketplaceResources, setMarketplaceResources] = useState<Resource[]>(
     []
   );
@@ -64,7 +65,7 @@ const ResourceManagement: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const openProject = () => {};
+  const openProject = () => { };
 
   const fetchResources = () => {
     axios
@@ -95,6 +96,19 @@ const ResourceManagement: React.FC = () => {
       })
       .then((res) => {
         setShareRequests(res.data.data);
+      })
+      .catch((err) => {
+        toast.error(
+          err.response.data.message || "Failed to fetch share requests"
+        );
+      });
+
+      axios
+      .post("/shares/department/signatures", {
+        department: department,
+      })
+      .then((res) => {
+        setRequiredSignatures(res.data.data);
       })
       .catch((err) => {
         toast.error(
@@ -188,7 +202,7 @@ const ResourceManagement: React.FC = () => {
         resource.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (filterDepartment.toLowerCase() === "all" ||
           resource.department?.name.toLowerCase() ===
-            filterDepartment.toLowerCase()) &&
+          filterDepartment.toLowerCase()) &&
         (filterCategory.toLowerCase() === "all" ||
           resource.category.toLowerCase() === filterCategory.toLowerCase())
     ),
@@ -201,7 +215,7 @@ const ResourceManagement: React.FC = () => {
         resource.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (filterDepartment.toLowerCase() === "all" ||
           resource.department?.name?.toLowerCase() ===
-            filterDepartment.toLowerCase()) &&
+          filterDepartment.toLowerCase()) &&
         (filterCategory.toLowerCase() === "all" ||
           resource.category.toLowerCase() === filterCategory.toLowerCase())
     ),
@@ -390,6 +404,15 @@ const ResourceManagement: React.FC = () => {
                 <span className="font-medium">Share Requests</span>
                 <Badge variant="secondary" className="ml-2">
                   {filteredShareRequests.length}
+                </Badge>
+              </TabsTrigger>        <TabsTrigger
+                value="signatures"
+                className="flex items-center gap-2 py-4 px-6 rounded-none data-[state=active]:bg-yellow-50 data-[state=active]:text-yellow-700"
+              >
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="font-medium">Pending Signatures</span>
+                <Badge variant="secondary" className="ml-2">
+                  {requiredSignatures.length}
                 </Badge>
               </TabsTrigger>
             </TabsList>
@@ -725,6 +748,168 @@ const ResourceManagement: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredShareRequests.map((share) => (
+                        <TableRow
+                          key={share._id}
+                          className="group"
+                          onClick={() => navigate(`${share.project}`)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                className={`h-10 w-10 rounded-md bg-gradient-to-br ${getResourceBgColor(
+                                  share._id
+                                )}`}
+                              >
+                                <div className="text-white font-medium text-sm">
+                                  {getResourceInitials(share.resource.name)}
+                                </div>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {share.resource.name}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {share.department.name}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {share.sharedWith.name}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <p className="font-medium">{share.quantity}</p>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(share.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleUpdateShareStatus(
+                                      share._id,
+                                      "pending"
+                                    )
+                                  }
+                                  disabled={share.status === "pending"}
+                                >
+                                  <Clock className="h-4 w-4 mr-2" /> Mark as
+                                  Pending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleUpdateShareStatus(
+                                      share._id,
+                                      "dispatched"
+                                    )
+                                  }
+                                  disabled={share.status === "dispatched"}
+                                >
+                                  <Truck className="h-4 w-4 mr-2" /> Mark as
+                                  Dispatched
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleUpdateShareStatus(
+                                      share._id,
+                                      "received"
+                                    )
+                                  }
+                                  disabled={share.status === "received"}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" /> Mark
+                                  as Received
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No share requests found matching your criteria.
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="signatures" className="p-4">
+              {requiredSignatures?.length > 0 ? (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-gray-50">
+                      <TableRow>
+                        <TableHead className="w-[250px]">
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("resource")}
+                            className="flex items-center gap-1 font-medium p-0 h-auto"
+                          >
+                            Resource
+                            <ArrowUpDown className="h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("department")}
+                            className="flex items-center gap-1 font-medium p-0 h-auto"
+                          >
+                            From Department
+                            <ArrowUpDown className="h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("sharedWith")}
+                            className="flex items-center gap-1 font-medium p-0 h-auto"
+                          >
+                            Shared With
+                            <ArrowUpDown className="h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("quantity")}
+                            className="flex items-center gap-1 font-medium p-0 h-auto"
+                          >
+                            Quantity
+                            <ArrowUpDown className="h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-1 font-medium p-0 h-auto"
+                          >
+                            Status
+                            <ArrowUpDown className="h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {requiredSignatures.map((share) => (
                         <TableRow
                           key={share._id}
                           className="group"

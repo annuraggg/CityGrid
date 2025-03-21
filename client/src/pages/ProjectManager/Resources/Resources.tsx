@@ -46,6 +46,7 @@ const ResourceManagement: React.FC = () => {
 
   const [quantity, setQuantity] = useState<number>(0);
   const [projectId, setProjectId] = useState<string>("");
+  
   const [open, setOpen] = useState<boolean>(false);
 
   const { getToken } = useAuth();
