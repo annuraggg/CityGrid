@@ -1,5 +1,4 @@
 import ax from "@/config/axios";
-import IProject from "@/types/Project";
 import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -25,11 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import ExtendedProject from "@/types/ExtendedProject";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
-  const [project, setProject] = useState<IProject>();
+  const [project, setProject] = useState<ExtendedProject>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -146,7 +146,7 @@ const ViewProject = () => {
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
           <div className="flex items-center gap-2 mt-2 text-muted-foreground">
             <Briefcase className="h-4 w-4" />
-            <span>{project.department || "No Department"}</span>
+            <span>{project.department?.name || "No Department"}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -252,7 +252,7 @@ const ViewProject = () => {
                         <div
                           key={index}
                           className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc.id)}
+                          onClick={() => downloadFile(doc._id)}
                         >
                           <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
                           <span>{doc.name}</span>
