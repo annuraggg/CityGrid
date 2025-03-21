@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import HodLayout from "./components/layout/HodLayout";
 import ProjectManagerLayout from "./components/layout/ProjectManagerLayout";
+import CitizenLayout from "./components/layout/CitizenLayout";
 import Invite from "./pages/Invite/Invite";
 import ViewProject from "./pages/ProjectManager/Project/ViewProject";
 
@@ -51,6 +52,26 @@ const ProjectCreate = lazy(
 );
 const ViewProjectShare = lazy(
   () => import("./pages/Hod/Resources/ViewProject")
+);
+
+// Citizen imports
+const CitizenDashboard = lazy(() =>
+  import("./pages/Citizen/Dashboard/Dashboard")
+);
+const CitizenProject = lazy(() =>
+  import("./pages/Citizen/Projects/Project")
+);
+const CitizenProjectDetails = lazy(() => 
+  import("./pages/Citizen/Projects/ProjectDetails")
+);
+const CitizenComplaint = lazy(() =>
+  import("./pages/Citizen/Complaints/Complaint")
+);
+const CitizenCreateComplaint = lazy(() =>
+  import("./pages/Citizen/Complaints/CreateComplaint")
+);
+const CitizenComplaintDetails = lazy(() =>
+  import("./pages/Citizen/Complaints/ComplaintDetails")
 );
 
 const router = createBrowserRouter([
@@ -263,7 +284,58 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "*",
+    path: "/citizen",
+    element: <CitizenLayout />,
+    children: [
+      {
+        path: "",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: "projects",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenProject />
+          </Suspense>
+        ),
+      },
+      {
+        path: "projects/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenProjectDetails />
+          </Suspense>
+        ),
+      },
+      {
+        path: "create-complaints",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenCreateComplaint />
+          </Suspense>
+        ),
+      },
+      {
+        path: "complaints/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenComplaintDetails />
+          </Suspense>
+        ),
+      },
+      {
+        path: "complaints",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <CitizenComplaint />
+          </Suspense>
+        ),
+      },
+    ],
   },
 ]);
 

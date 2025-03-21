@@ -26,7 +26,7 @@ import {
   List,
   AlertCircle,
   CheckCircle2,
-  RotateCw
+  RotateCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -96,32 +96,32 @@ const Project = () => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "completed":
-        return { 
-          bgColor: "bg-emerald-50", 
-          textColor: "text-emerald-700", 
+        return {
+          bgColor: "bg-emerald-50",
+          textColor: "text-emerald-700",
           borderColor: "border-emerald-200",
-          icon: <CheckCircle2 size={14} className="mr-1.5" />
+          icon: <CheckCircle2 size={14} className="mr-1.5" />,
         };
       case "in-progress":
-        return { 
-          bgColor: "bg-amber-50", 
-          textColor: "text-amber-700", 
+        return {
+          bgColor: "bg-amber-50",
+          textColor: "text-amber-700",
           borderColor: "border-amber-200",
-          icon: <Clock size={14} className="mr-1.5" />
+          icon: <Clock size={14} className="mr-1.5" />,
         };
       case "upcoming":
-        return { 
-          bgColor: "bg-indigo-50", 
-          textColor: "text-indigo-700", 
+        return {
+          bgColor: "bg-indigo-50",
+          textColor: "text-indigo-700",
           borderColor: "border-indigo-200",
-          icon: <CalendarIcon size={14} className="mr-1.5" /> 
+          icon: <CalendarIcon size={14} className="mr-1.5" />,
         };
       default:
-        return { 
-          bgColor: "bg-slate-50", 
-          textColor: "text-slate-700", 
+        return {
+          bgColor: "bg-slate-50",
+          textColor: "text-slate-700",
           borderColor: "border-slate-200",
-          icon: <AlertCircle size={14} className="mr-1.5" /> 
+          icon: <AlertCircle size={14} className="mr-1.5" />,
         };
     }
   };
@@ -136,11 +136,12 @@ const Project = () => {
     navigate("create");
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <RotateCw className="animate-spin h-8 w-8 text-indigo-600" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <RotateCw className="animate-spin h-8 w-8 text-indigo-600" />
+      </div>
+    );
 
   return (
     <div className="w-full mx-auto px-6 py-8 space-y-8 max-w-7xl">
@@ -148,8 +149,12 @@ const Project = () => {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 mb-2">Projects Dashboard</h1>
-            <p className="text-slate-500 text-base">Manage and monitor your assigned projects</p>
+            <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+              Projects Dashboard
+            </h1>
+            <p className="text-slate-500 text-base">
+              Manage and monitor your assigned projects
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex border border-slate-200 rounded-md overflow-hidden">
@@ -159,8 +164,8 @@ const Project = () => {
                 variant="ghost"
                 size="sm"
                 className={`h-9 px-3 text-sm rounded-none border-r border-slate-200 ${
-                  viewType === "grid" 
-                    ? "bg-indigo-50 text-indigo-700" 
+                  viewType === "grid"
+                    ? "bg-indigo-50 text-indigo-700"
                     : "bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
@@ -173,8 +178,8 @@ const Project = () => {
                 variant="ghost"
                 size="sm"
                 className={`h-9 px-3 text-sm rounded-none ${
-                  viewType === "list" 
-                    ? "bg-indigo-50 text-indigo-700" 
+                  viewType === "list"
+                    ? "bg-indigo-50 text-indigo-700"
                     : "bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
@@ -182,7 +187,7 @@ const Project = () => {
                 List
               </Button>
             </div>
-            <Button 
+            <Button
               className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium"
               onClick={goToCreateProject}
             >
@@ -202,7 +207,9 @@ const Project = () => {
                 <p className="text-sm font-medium text-slate-500">
                   Total Projects
                 </p>
-                <p className="text-3xl font-bold mt-1 text-slate-900">{projects.length}</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900">
+                  {projects.length}
+                </p>
               </div>
               <div className="bg-indigo-50 p-3 rounded-full">
                 <FolderOpen className="h-6 w-6 text-indigo-600" />
@@ -214,7 +221,9 @@ const Project = () => {
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-slate-500">In Progress</p>
+                <p className="text-sm font-medium text-slate-500">
+                  In Progress
+                </p>
                 <p className="text-3xl font-bold mt-1 text-slate-900">
                   {
                     projects.filter(
@@ -276,9 +285,7 @@ const Project = () => {
                 <FolderOpen className="h-5 w-5 text-indigo-600 mr-2" />
                 Assigned Projects
               </CardTitle>
-              <Badge 
-                className="bg-indigo-50 text-indigo-700 border border-indigo-200"
-              >
+              <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200">
                 {projects.length} Total
               </Badge>
             </div>
@@ -310,7 +317,10 @@ const Project = () => {
                     const status = getProjectStatus(project);
                     const statusConfig = getStatusConfig(status);
                     return (
-                      <tr key={project.name} className="border-b hover:bg-slate-50 transition-colors">
+                      <tr
+                        key={project.name}
+                        className="border-b hover:bg-slate-50 transition-colors"
+                      >
                         <td className="p-3">
                           <div className="flex items-center">
                             <div>
@@ -326,7 +336,9 @@ const Project = () => {
                         <td className="p-3">
                           <div className="flex items-center gap-1.5">
                             <Building size={16} className="text-slate-500" />
-                            <span className="text-slate-700">{project.department || "General"}</span>
+                            <span className="text-slate-700">
+                              {project.department || "General"}
+                            </span>
                           </div>
                         </td>
                         <td className="p-3">
@@ -339,8 +351,8 @@ const Project = () => {
                           </div>
                         </td>
                         <td className="p-3">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`flex items-center ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}
                           >
                             {statusConfig.icon} {status}
@@ -356,8 +368,8 @@ const Project = () => {
                         </td>
                         <td className="p-3 text-right">
                           <Button
-                            variant="ghost" 
-                            size="sm" 
+                            variant="ghost"
+                            size="sm"
                             className="h-8 gap-1 text-slate-600 hover:bg-slate-100 hover:text-indigo-600"
                             onClick={() => goToProjectDetails(project._id)}
                           >
@@ -384,6 +396,9 @@ const Project = () => {
           {projects.map((project) => {
             const status = getProjectStatus(project);
             const statusConfig = getStatusConfig(status);
+            const isConflict = conflicts.some(
+              (conflict) => conflict.project === project._id
+            );
             return (
               <Card
                 key={project.name}
@@ -391,13 +406,23 @@ const Project = () => {
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-semibold text-slate-900">{project.name}</CardTitle>
-                    <Badge 
-                      variant="outline" 
+                    <CardTitle className="text-lg font-semibold text-slate-900">
+                      {project.name}
+                    </CardTitle>
+                    <Badge
+                      variant="outline"
                       className={`flex items-center ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}
                     >
                       {statusConfig.icon} {status}
-                    </Badge>
+                    </Badge>{" "}
+                    {isConflict && (
+                      <Badge
+                        variant="outline"
+                        className="bg-red-50 text-red-700 border-red-200"
+                      >
+                        Conflict Detected
+                      </Badge>
+                    )}
                   </div>
                   {project.department && (
                     <div className="flex items-center text-sm text-slate-500 mt-1">
@@ -424,14 +449,20 @@ const Project = () => {
                     <div className="text-sm text-slate-500">
                       {project.documents.length > 0 && (
                         <span className="mr-4">
-                          <FileText size={16} className="inline mr-1 text-slate-400" />
+                          <FileText
+                            size={16}
+                            className="inline mr-1 text-slate-400"
+                          />
                           {project.documents.length} document
                           {project.documents.length !== 1 ? "s" : ""}
                         </span>
                       )}
                       {project.resources.length > 0 && (
                         <span>
-                          <FolderOpen size={16} className="inline mr-1 text-slate-400" />
+                          <FolderOpen
+                            size={16}
+                            className="inline mr-1 text-slate-400"
+                          />
                           {project.resources.length} resource
                           {project.resources.length !== 1 ? "s" : ""}
                         </span>
@@ -450,8 +481,8 @@ const Project = () => {
                 </CardContent>
                 <CardFooter className="flex justify-between pt-2 border-t border-slate-100">
                   <Button
-                    variant="outline" 
-                    size="sm" 
+                    variant="outline"
+                    size="sm"
                     className="text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-indigo-600 h-9"
                     onClick={() => goToProjectDetails(project._id)}
                   >
@@ -472,9 +503,12 @@ const Project = () => {
             <div className="mx-auto bg-slate-100 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
               <FolderOpen className="h-8 w-8 text-slate-500" />
             </div>
-            <CardTitle className="text-xl mb-2 text-slate-900">No projects found</CardTitle>
+            <CardTitle className="text-xl mb-2 text-slate-900">
+              No projects found
+            </CardTitle>
             <CardDescription className="text-slate-500 max-w-md mx-auto">
-              You don't have any assigned projects yet. Get started by creating your first project or contact your department head.
+              You don't have any assigned projects yet. Get started by creating
+              your first project or contact your department head.
             </CardDescription>
             <Button
               className="mt-6 bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium"
