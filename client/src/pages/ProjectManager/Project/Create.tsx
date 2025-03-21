@@ -15,17 +15,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { 
-  CalendarIcon, 
-  ChevronLeft, 
-  MapPin, 
-  Check, 
-  FileText, 
-  Building, 
-  PlusCircle,
+import {
+  CalendarIcon,
+  ChevronLeft,
+  MapPin,
+  Check,
+  FileText,
   Clock,
-  Calendar as CalendarFull, 
-  SquarePen
+  Calendar as CalendarFull,
+  SquarePen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
@@ -34,14 +32,23 @@ import PlacesAutocomplete, {
   getLatLng,
 } from "react-places-autocomplete";
 import { Link } from "react-router-dom";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardFooter 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
@@ -59,6 +66,7 @@ const Create = () => {
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [alertOpen, setAlertOpen] = useState(false);
   const [location, setLocation] = useState({
     address: "",
     latitude: 40.7128,
@@ -82,7 +90,6 @@ const Create = () => {
     borderRadius: "0.5rem",
   };
 
-  // Handle address selection
   const handleSelect = async (address: string) => {
     try {
       const results = await geocodeByAddress(address);
@@ -113,7 +120,6 @@ const Create = () => {
     }
   };
 
-  // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -150,8 +156,55 @@ const Create = () => {
       },
     };
 
+    axios
+      .post("/conflicts/check", projectData)
+      .then(async () => {
+        try {
+          await axios.post("/projects", projectData);
+          toast.success("Project created successfully!");
+          navigate("/project-manager/projects");
+        } catch (error) {
+          console.error("Error creating project:", error);
+          toast.error("Failed to create project. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (error.response.status === 409) {
+          setAlertOpen(true);
+        } else {
+          toast.error("Failed to check for conflicts");
+        }
+        setLoading(false);
+      });
+  };
+
+  const submit = async () => {
+    setAlertOpen(false);
+    setLoading(true);
+
+    // Prepare project data according to schema
+    const projectData: IProject = {
+      _id: "",
+      name,
+      manager: "", // This would typically come from auth context or be set by backend
+      description,
+      documents: [],
+      resources: [],
+      schedule: {
+        start: startDate!,
+        end: endDate!,
+        isRescheduled: false,
+      },
+      location: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      },
+    };
+
     try {
-      await axios.post("/projects", projectData);
+      await axios.post("/projects/conflict", projectData);
       toast.success("Project created successfully!");
       navigate("/project-manager/projects");
     } catch (error) {
@@ -166,7 +219,10 @@ const Create = () => {
     <div className="w-full mx-auto px-6 py-8 space-y-8 max-w-7xl">
       {/* Breadcrumb */}
       <div className="mb-4">
-        <Link to="/project-manager/projects" className="text-sm text-slate-600 hover:text-indigo-600 flex items-center">
+        <Link
+          to="/project-manager/projects"
+          className="text-sm text-slate-600 hover:text-indigo-600 flex items-center"
+        >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Back to Projects
         </Link>
@@ -174,8 +230,12 @@ const Create = () => {
 
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Create New Project</h1>
-        <p className="text-slate-500">Add a new project with details, timeline, and location information</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+          Create New Project
+        </h1>
+        <p className="text-slate-500">
+          Add a new project with details, timeline, and location information
+        </p>
       </div>
 
       <Card className="border-slate-200 shadow-sm">
@@ -192,7 +252,10 @@ const Create = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Project Name */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-slate-700"
+              >
                 Project Name
               </Label>
               <Input
@@ -229,7 +292,9 @@ const Create = () => {
             <div className="space-y-4">
               <div className="flex items-center mb-2">
                 <CalendarFull className="h-5 w-5 text-slate-600 mr-2" />
-                <h3 className="text-base font-medium text-slate-800">Project Timeline</h3>
+                <h3 className="text-base font-medium text-slate-800">
+                  Project Timeline
+                </h3>
               </div>
 
               {/* Date Pickers */}
@@ -249,7 +314,9 @@ const Create = () => {
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
-                        {startDate ? format(startDate, "PPP") : "Select start date"}
+                        {startDate
+                          ? format(startDate, "PPP")
+                          : "Select start date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 border-slate-200">
@@ -259,7 +326,8 @@ const Create = () => {
                         onSelect={setStartDate}
                         initialFocus
                         classNames={{
-                          day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 focus:bg-indigo-600",
+                          day_selected:
+                            "bg-indigo-600 text-white hover:bg-indigo-600 focus:bg-indigo-600",
                           day_today: "bg-slate-100 text-slate-900",
                         }}
                       />
@@ -291,9 +359,12 @@ const Create = () => {
                         selected={endDate}
                         onSelect={setEndDate}
                         initialFocus
-                        disabled={(date) => (startDate ? date < startDate : false)}
+                        disabled={(date) =>
+                          startDate ? date < startDate : false
+                        }
                         classNames={{
-                          day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 focus:bg-indigo-600",
+                          day_selected:
+                            "bg-indigo-600 text-white hover:bg-indigo-600 focus:bg-indigo-600",
                           day_today: "bg-slate-100 text-slate-900",
                         }}
                       />
@@ -309,7 +380,9 @@ const Create = () => {
             <div className="space-y-4">
               <div className="flex items-center mb-2">
                 <MapPin className="h-5 w-5 text-slate-600 mr-2" />
-                <h3 className="text-base font-medium text-slate-800">Project Location</h3>
+                <h3 className="text-base font-medium text-slate-800">
+                  Project Location
+                </h3>
               </div>
 
               <LoadScript
@@ -342,20 +415,23 @@ const Create = () => {
                         <Input
                           {...getInputProps({
                             placeholder: "Enter an address or location",
-                            className: "pl-10 border-slate-200 focus:border-indigo-500 h-10",
+                            className:
+                              "pl-10 border-slate-200 focus:border-indigo-500 h-10",
                           })}
                         />
                       </div>
                       <div className="absolute z-10 w-full bg-white shadow-lg rounded-md border border-slate-200 mt-1">
                         {searchLoading && (
-                          <div className="p-3 text-slate-500 text-sm">Loading...</div>
+                          <div className="p-3 text-slate-500 text-sm">
+                            Loading...
+                          </div>
                         )}
                         {suggestions.map((suggestion) => (
                           <div
                             {...getSuggestionItemProps(suggestion, {
                               className: `p-3 cursor-pointer text-sm border-b border-slate-100 last:border-b-0 ${
-                                suggestion.active 
-                                  ? "bg-indigo-50 text-indigo-700" 
+                                suggestion.active
+                                  ? "bg-indigo-50 text-indigo-700"
                                   : "bg-white text-slate-700 hover:bg-slate-50"
                               }`,
                             })}
@@ -468,6 +544,24 @@ const Create = () => {
           </form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Your project conflicts with another project
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Please check the schedule and location to avoid conflicts. If you
+              choose to continue, the project will be created with conflicts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={submit}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

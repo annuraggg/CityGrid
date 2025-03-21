@@ -31,6 +31,22 @@ const ResourceShareSchema = new mongoose.Schema({
     ref: "Project",
     required: true,
   },
+  contractAddress: {
+    type: String,
+    required: true,
+  },
+  requesterAddress: {
+    type: String,
+    required: true,
+  },
+  requestingHODAddress: {
+    type: String,
+    required: true,
+  },
+  providingHODAddress: {
+    type: String,
+    required: true,
+  },
 });
 
 const ResourceShare = mongoose.model("ResourceShare", ResourceShareSchema);

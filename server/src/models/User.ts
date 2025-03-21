@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true },
     department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
     uid: { type: String },
+    walletAddress: { type: String },
   },
   { timestamps: true }
 );

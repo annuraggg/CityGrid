@@ -10,5 +10,7 @@ app.get("/:id", projectController.getProject);
 app.put("/:id", projectController.updateProject);
 app.delete("/:id", projectController.deleteProject);
 app.post("/conflict", projectController.createConflict);
+app.put("/:id/reschedule", projectController.rescheduleProject);
+app.post("/llm", projectController.getLLMResponse);
 
 export default app;
