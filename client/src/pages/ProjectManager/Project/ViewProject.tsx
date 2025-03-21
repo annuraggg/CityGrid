@@ -273,35 +273,31 @@ const ViewProject = () => {
                       {project.documents.map((doc, index) => (
                         <div
                           key={index}
-<<<<<<< HEAD
                           className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc.id)}
-=======
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent"
->>>>>>> bb84bbfd4e252635d1060853e16a85b77bfc51f1
+                          onClick={() => downloadFile(doc)}
                         >
                           <div 
                             className="flex items-center cursor-pointer" 
-                            onClick={() => downloadFile(doc.id)}
+                            onClick={() => downloadFile(doc)}
                           >
                             <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                            <span>{doc.name}</span>
+                            <span>{doc}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
-                              disabled={verifyingDocId === doc.id}
-                              onClick={(e) => verifyDocument(doc.id, e)}
+                              disabled={verifyingDocId === doc}
+                              onClick={(e) => verifyDocument(doc, e)}
                             >
-                              {verifyingDocId === doc.id 
+                              {verifyingDocId === doc 
                                 ? "Verifying..." 
-                                : verificationStatus[doc.id] 
+                                : verificationStatus[doc] 
                                   ? "Verified ✅" 
                                   : "Verify"}
                             </Button>
                             <Button 
                               variant="ghost" 
-                              onClick={() => downloadFile(doc.id)}
+                              onClick={() => downloadFile(doc)}
                             >
                               Download
                             </Button>
@@ -377,9 +373,9 @@ const ViewProject = () => {
                 <p className="text-sm font-medium mb-1">Project Manager</p>
                 <div className="flex items-center gap-2 p-3 border rounded-lg">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                    {project.manager._id.charAt(0).toUpperCase()}
+                    {project.manager.charAt(0).toUpperCase()}
                   </div>
-                  <span>{project.manager._id}</span>
+                  <span>{project.manager}</span>
                 </div>
               </div>
 
