@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ax from "@/config/axios";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
@@ -23,6 +22,16 @@ import PlacesAutocomplete, {
   geocodeByAddress,
   getLatLng,
 } from "react-places-autocomplete";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import type IProject from "@/types/Project";
 
@@ -32,6 +41,8 @@ const Create = () => {
 
   const { getToken } = useAuth();
   const axios = ax(getToken);
+
+  const [alertOpen, setAlertOpen] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -128,8 +139,55 @@ const Create = () => {
       },
     };
 
+    axios
+      .post("/conflicts/check", projectData)
+      .then(async () => {
+        try {
+          await axios.post("/projects", projectData);
+          toast.success("Project created successfully!");
+          navigate("/project-manager/projects");
+        } catch (error) {
+          console.error("Error creating project:", error);
+          toast.error("Failed to create project. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (error.response.status === 409) {
+          setAlertOpen(true);
+        } else {
+          toast.error("Failed to check for conflicts");
+        }
+        setLoading(false);
+      });
+  };
+
+  const submit = async () => {
+    setAlertOpen(false);
+    setLoading(true);
+
+    // Prepare project data according to schema
+    const projectData: IProject = {
+      _id: "",
+      name,
+      manager: "", // This would typically come from auth context or be set by backend
+      description,
+      documents: [],
+      resources: [],
+      schedule: {
+        start: startDate!,
+        end: endDate!,
+        isRescheduled: false,
+      },
+      location: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      },
+    };
+
     try {
-      await axios.post("/projects", projectData);
+      await axios.post("/projects/conflict", projectData);
       toast.success("Project created successfully!");
       navigate("/project-manager/projects");
     } catch (error) {
@@ -355,6 +413,24 @@ const Create = () => {
           </div>
         </form>
       </div>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Your project conflicts with another project
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Please check the schedule and location to avoid conflicts. If you
+              choose to continue, the project will be created with conflicts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={submit}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

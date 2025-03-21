@@ -24,12 +24,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import Conflict from "@/types/Conflict";
 
 const Project = () => {
   const [loading, setLoading] = useState(true);
   const { getToken } = useAuth();
   const axios = ax(getToken);
   const [projects, setProjects] = useState<IProject[]>([]);
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [viewType, setViewType] = useState("grid"); // grid or list
   const navigate = useNavigate();
 
@@ -40,6 +42,8 @@ const Project = () => {
   const fetchProjects = async () => {
     try {
       const res = await axios.get("/projects/manager");
+      const conflictsRes = await axios.get("/conflicts/department");
+      setConflicts(conflictsRes.data.data);
       setProjects(res.data.data);
       setLoading(false);
     } catch (error: any) {
@@ -303,78 +307,90 @@ const Project = () => {
       {/* Grid View */}
       {viewType === "grid" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <Card
-              key={project.name}
-              className="overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{project.name}</CardTitle>
-                  <Badge className={getStatusColor(getProjectStatus(project))}>
-                    {getProjectStatus(project)}
-                  </Badge>
-                </div>
-                {project.department && (
-                  <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Building size={14} className="mr-1" />
-                    {project.department}
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-gray-600 mb-4 line-clamp-2">
-                  {project.description}
-                </p>
-
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <CalendarIcon size={14} className="mr-2" />
-                  <div>
-                    <span className="font-medium">Timeline: </span>
-                    {formatDate(project.schedule?.start.toString())} -{" "}
-                    {formatDate(project.schedule?.end.toString())}
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    {project.documents.length > 0 && (
-                      <span className="mr-4">
-                        <FileText size={14} className="inline mr-1" />
-                        {project.documents.length} document
-                        {project.documents.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {project.resources.length > 0 && (
-                      <span>
-                        <FolderOpen size={14} className="inline mr-1" />
-                        {project.resources.length} resource
-                        {project.resources.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-
-                  {project.schedule?.isRescheduled && (
+          {projects.map((project) => {
+            const isConflicting =
+              conflicts.some((conflict) => conflict.project === project._id) ||
+              conflicts.some(
+                (conflict) => conflict.conflictingProject === project._id
+              );
+            return (
+              <Card
+                key={project.name}
+                className="overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-xl">{project.name}</CardTitle>
                     <Badge
-                      variant="outline"
-                      className="bg-yellow-50 text-yellow-800 border-yellow-200"
+                      className={getStatusColor(getProjectStatus(project))}
                     >
-                      Rescheduled
+                      {getProjectStatus(project)}
                     </Badge>
+                    {isConflicting && (
+                      <Badge className="bg-red-500">Conflicting</Badge>
+                    )}
+                  </div>
+                  {project.department && (
+                    <div className="flex items-center text-sm text-gray-500 mt-1">
+                      <Building size={14} className="mr-1" />
+                      {project.department}
+                    </div>
                   )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-2 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => goToProjectDetails(project._id)}
-                >
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <p className="text-gray-600 mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
+
+                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                    <CalendarIcon size={14} className="mr-2" />
+                    <div>
+                      <span className="font-medium">Timeline: </span>
+                      {formatDate(project.schedule?.start.toString())} -{" "}
+                      {formatDate(project.schedule?.end.toString())}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm">
+                      {project.documents.length > 0 && (
+                        <span className="mr-4">
+                          <FileText size={14} className="inline mr-1" />
+                          {project.documents.length} document
+                          {project.documents.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {project.resources.length > 0 && (
+                        <span>
+                          <FolderOpen size={14} className="inline mr-1" />
+                          {project.resources.length} resource
+                          {project.resources.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+
+                    {project.schedule?.isRescheduled && (
+                      <Badge
+                        variant="outline"
+                        className="bg-yellow-50 text-yellow-800 border-yellow-200"
+                      >
+                        Rescheduled
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToProjectDetails(project._id)}
+                  >
+                    View Details
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       )}
 
