@@ -34,6 +34,8 @@ const ViewProject = () => {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [verificationStatus, setVerificationStatus] = useState<Record<string, boolean>>({});
+  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
 
   const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
@@ -84,17 +86,39 @@ const ViewProject = () => {
 
       toast.success("Document uploaded successfully");
 
-      // Refresh project data
       fetchProject();
     } catch (err) {
       console.error("Error uploading document:", err);
       toast.error("Failed to upload document");
     } finally {
       setUploading(false);
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const verifyDocument = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (verifyingDocId === docId) return; 
+    
+    setVerifyingDocId(docId);
+    
+    try {
+      const res = await axios.get(`documents/${docId}/verify`);
+      setVerificationStatus(prev => ({ ...prev, [docId]: res.data.data.verified }));
+      
+      if (res.data.data.verified) {
+        toast.success("Document successfully verified on blockchain");
+      } else {
+        toast.error("Document verification failed - hash mismatch");
+      }
+    } catch (err) {
+      console.error("Error during verification:", err);
+      toast.error("Verification process failed");
+    } finally {
+      setVerifyingDocId(null);
     }
   };
 
@@ -122,7 +146,6 @@ const ViewProject = () => {
     return <ErrorState message="Project not found" />;
   }
 
-  // Format dates
   const startDate = project.schedule.start
     ? format(new Date(project.schedule.start), "MMMM dd, yyyy")
     : "Not set";
@@ -132,7 +155,6 @@ const ViewProject = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -251,11 +273,34 @@ const ViewProject = () => {
                       {project.documents.map((doc, index) => (
                         <div
                           key={index}
-                          className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc._id)}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent"
                         >
-                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{doc.name}</span>
+                          <div 
+                            className="flex items-center cursor-pointer" 
+                            onClick={() => downloadFile(doc.id)}
+                          >
+                            <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span>{doc.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              disabled={verifyingDocId === doc.id}
+                              onClick={(e) => verifyDocument(doc.id, e)}
+                            >
+                              {verifyingDocId === doc.id 
+                                ? "Verifying..." 
+                                : verificationStatus[doc.id] 
+                                  ? "Verified ✅" 
+                                  : "Verify"}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              onClick={() => downloadFile(doc.id)}
+                            >
+                              Download
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -373,7 +418,6 @@ const ViewProject = () => {
   );
 };
 
-// Helper components
 const LoadingSkeleton = () => (
   <div className="container mx-auto py-8 px-4 max-w-6xl">
     <div className="mb-8">
@@ -405,7 +449,6 @@ const ErrorState = ({ message }: { message: string }) => (
   </div>
 );
 
-// Helper functions
 const calculateDuration = (start: Date, end: Date): string => {
   if (!start || !end) return "No timeline set";
 

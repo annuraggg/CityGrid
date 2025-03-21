@@ -92,6 +92,8 @@ const deleteProject = async (c: Context) => {
 const getDepartmentProjects = async (c: Context) => {
   const department = c.req.param("department");
 
+  console.log(department);
+
   try {
     const projects = await Project.find({ department }).lean();
     return sendSuccess(c, 200, "Projects fetched successfully", projects);

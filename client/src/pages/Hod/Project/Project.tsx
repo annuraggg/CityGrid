@@ -187,13 +187,13 @@ const ProjectsDashboard: React.FC = () => {
                       </td>
                       <td className="p-3">{project.manager}</td>
                       <td className="p-3 text-gray-500 text-sm">
-                        {project.schedule?.start.toLocaleDateString("en-US", {
+                        {new Date(project.schedule?.start).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
                         })}
                         {" - "}
-                        {project.schedule?.end.toLocaleDateString("en-US", {
+                        {new Date(project.schedule?.end).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",

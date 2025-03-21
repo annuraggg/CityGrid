@@ -253,7 +253,7 @@ const ViewProject = () => {
                         <div
                           key={index}
                           className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc._id)}
+                          onClick={() => downloadFile(doc.id)}
                         >
                           <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
                           <span>{doc.name}</span>
@@ -374,7 +374,6 @@ const ViewProject = () => {
   );
 };
 
-// Helper components
 const LoadingSkeleton = () => (
   <div className="container mx-auto py-8 px-4 max-w-6xl">
     <div className="mb-8">
@@ -406,7 +405,6 @@ const ErrorState = ({ message }: { message: string }) => (
   </div>
 );
 
-// Helper functions
 const calculateDuration = (start: Date, end: Date): string => {
   if (!start || !end) return "No timeline set";
 
