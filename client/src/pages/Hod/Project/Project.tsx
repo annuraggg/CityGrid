@@ -1,5 +1,3 @@
-// merge conflict
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -46,24 +44,24 @@ interface Conflict {
   createdAt: string;
 }
 
-// Status badge styling - using shadcn color system
+// Status badge styling - updated to match dashboard design system
 const STATUS_STYLES = {
-  Completed: "bg-slate-100 text-slate-800 border-slate-200",
-  Resolved: "bg-slate-100 text-slate-800 border-slate-200",
-  "In Progress": "bg-slate-100 text-slate-800 border-slate-200",
-  "Under Review": "bg-slate-100 text-slate-800 border-slate-200",
-  Planned: "bg-slate-100 text-slate-800 border-slate-200",
-  Unresolved: "bg-slate-100 text-slate-800 border-slate-200"
+  Completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Resolved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "In Progress": "bg-amber-50 text-amber-700 border-amber-200",
+  "Under Review": "bg-blue-50 text-blue-700 border-blue-200",
+  Planned: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  Unresolved: "bg-rose-50 text-rose-700 border-rose-200"
 };
 
-// Priority badge styling - using shadcn color system
+// Priority badge styling - updated to match dashboard design system
 const PRIORITY_STYLES = {
-  High: "bg-slate-100 text-slate-800 border-slate-200",
-  Critical: "bg-slate-100 text-slate-800 border-slate-200",
-  Medium: "bg-slate-100 text-slate-800 border-slate-200",
-  Major: "bg-slate-100 text-slate-800 border-slate-200",
-  Low: "bg-slate-100 text-slate-800 border-slate-200",
-  Minor: "bg-slate-100 text-slate-800 border-slate-200"
+  High: "bg-rose-50 text-rose-700 border-rose-200",
+  Critical: "bg-rose-50 text-rose-700 border-rose-200",
+  Medium: "bg-amber-50 text-amber-700 border-amber-200",
+  Major: "bg-amber-50 text-amber-700 border-amber-200",
+  Low: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Minor: "bg-emerald-50 text-emerald-700 border-emerald-200"
 };
 
 // Status icons with consistent styling
@@ -76,60 +74,79 @@ const STATUS_ICONS = {
   Unresolved: <AlertTriangle className="h-3 w-3 mr-1 text-rose-500" />
 };
 
-// Component for page header with consistent styling
+// Updated component for page header with consistent styling
 const DashboardHeader: React.FC<{
   title: string;
   subtitle: string;
   actionLabel: string;
   onAction: () => void;
 }> = ({ title, subtitle, actionLabel, onAction }) => (
-  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-      <p className="text-slate-500 mt-1">{subtitle}</p>
+  <div className="mb-8">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">{title}</h1>
+        <p className="text-slate-500 text-base">{subtitle}</p>
+      </div>
+      <Button 
+        onClick={onAction}
+        className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        {actionLabel}
+      </Button>
     </div>
-    <Button onClick={onAction}>
-      <Plus className="mr-2 h-4 w-4" />
-      {actionLabel}
-    </Button>
   </div>
 );
 
-// Search and filter component
+// Updated search and filter component
 const SearchAndFilters: React.FC<{
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onRefresh: () => void;
 }> = ({ searchQuery, onSearchChange, onRefresh }) => (
-  <div className="flex flex-col sm:flex-row gap-4 items-center mb-6">
-    <div className="relative w-full sm:w-96">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-      <Input
-        placeholder="Search by name, ID, or department..."
-        className="pl-8 bg-white"
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
-      />
-    </div>
-
-    <div className="flex items-center gap-2 ml-auto">
-      <Button variant="outline" size="sm" className="text-slate-600">
-        <SlidersHorizontal className="mr-1 h-4 w-4" />
-        Filter
-      </Button>
-      <Button variant="outline" size="sm" className="text-slate-600" onClick={onRefresh}>
-        <RotateCw className="mr-1 h-4 w-4" />
-        Refresh
-      </Button>
-      <Button variant="outline" size="sm" className="text-slate-600">
-        <FileDown className="mr-1 h-4 w-4" />
-        Export
-      </Button>
+  <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6 shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="relative w-full sm:w-96">
+        <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+        <Input
+          placeholder="Search by name, ID, or department..."
+          className="pl-10 bg-white border-slate-200 h-10 text-slate-800 focus:border-indigo-500"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </div>
+      <div className="flex items-center gap-3 ml-auto">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
+        >
+          <SlidersHorizontal className="h-4 w-4 mr-2 text-slate-500" />
+          Filter
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onRefresh}
+          className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
+        >
+          <RotateCw className="h-4 w-4 mr-2 text-slate-500" />
+          Refresh
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
+        >
+          <FileDown className="h-4 w-4 mr-2 text-slate-500" />
+          Export
+        </Button>
+      </div>
     </div>
   </div>
 );
 
-// Reusable DataTable column header
+// Updated reusable DataTable column header
 const TableHeader: React.FC<{ label: string }> = ({ label }) => (
   <th className="text-sm font-medium text-left p-3 text-slate-600">
     {label}
@@ -288,7 +305,7 @@ const ProjectsDashboard: React.FC = () => {
   };
 
   return (
-    <div className="w-full mx-auto px-4 py-6 space-y-6 max-w-7xl">
+    <div className="w-full mx-auto px-6 py-8 space-y-8 max-w-7xl">
       <DashboardHeader
         title="Projects Management"
         subtitle="Monitor and coordinate municipal projects and resolve interdepartmental conflicts"
@@ -302,21 +319,41 @@ const ProjectsDashboard: React.FC = () => {
         onRefresh={handleRefresh}
       />
 
-      {/* Projects Card */}
-      <Card className="border border-slate-200 shadow-sm overflow-hidden py-0">
-        <CardHeader className="bg-slate-50 py-3 px-4">
+      {/* Projects Card - Updated to match design system */}
+      <Card className="border-slate-200 shadow-sm overflow-hidden py-0">
+        <CardHeader className="bg-slate-50 py-4 px-5 border-b border-slate-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-slate-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-slate-400 mr-2"></span>
+            <CardTitle className="text-slate-800 flex items-center text-lg font-semibold">
+              <span className="h-3 w-3 rounded-full bg-indigo-500 mr-2"></span>
               Department Projects
             </CardTitle>
 
             <Tabs defaultValue="all" className="w-fit" onValueChange={setActiveTab}>
-              <TabsList className="bg-white border border-slate-200">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="inProgress">In Progress</TabsTrigger>
-                <TabsTrigger value="planned">Planned</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsList className="bg-white border border-slate-200 h-9 p-1">
+                <TabsTrigger 
+                  value="all" 
+                  className="px-3 h-7 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="inProgress" 
+                  className="px-3 h-7 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                >
+                  In Progress
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="planned" 
+                  className="px-3 h-7 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                >
+                  Planned
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="completed" 
+                  className="px-3 h-7 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                >
+                  Completed
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -341,28 +378,47 @@ const ProjectsDashboard: React.FC = () => {
                   filteredProjects.map((project) => (
                     <tr key={project.id} className="border-b hover:bg-slate-50 transition-colors">
                       <td className="p-3 font-medium">
-                        <Link to={`/hod/projects/${project.id}`} className="text-slate-900 hover:text-slate-700">
+                        <Link to={`/hod/projects/${project.id}`} className="text-slate-900 hover:text-indigo-600">
                           {project.id}
                         </Link>
                       </td>
                       <td className="p-3 font-medium text-slate-900">{project.name}</td>
                       <td className="p-3">
-                        <Badge variant="outline" className="bg-slate-50 font-normal text-slate-700">
+                        <Badge 
+                          variant="outline" 
+                          className="bg-slate-50 font-medium text-slate-700 border-slate-200"
+                        >
                           {project.department}
                         </Badge>
                       </td>
                       <td className="p-3">
-                        <PriorityBadge priority={project.priority} />
+                        <Badge 
+                          variant="outline" 
+                          className={`${PRIORITY_STYLES[project.priority]} flex items-center px-2 py-0.5 text-xs font-medium`}
+                        >
+                          <span className={`mr-1 h-2 w-2 rounded-full bg-current`}></span>
+                          {project.priority}
+                        </Badge>
                       </td>
                       <td className="p-3">
-                        <StatusBadge status={project.status} />
+                        <Badge 
+                          variant="outline" 
+                          className={`${STATUS_STYLES[project.status]} flex items-center px-2 py-0.5 text-xs font-medium`}
+                        >
+                          {STATUS_ICONS[project.status as keyof typeof STATUS_ICONS]}
+                          {project.status}
+                        </Badge>
                       </td>
                       <td className="p-3 text-slate-500 text-sm">
                         {formatDate(project.updatedAt)}
                       </td>
                       <td className="p-3 text-center">
-                        <Link to={`/hod/projects/${project.id}`} className="text-slate-500 hover:text-slate-700">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                        <Link to={`/hod/projects/${project.id}`}>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 rounded-full text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
+                          >
                             <ChevronRight className="h-5 w-5" />
                           </Button>
                         </Link>
@@ -370,38 +426,53 @@ const ProjectsDashboard: React.FC = () => {
                     </tr>
                   ))
                 ) : (
-                  <EmptyTableRow colSpan={7} message="No matching projects found" />
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500">
+                      No matching projects found
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
-          <div>Displaying  {filteredProjects.length} of {projects.length} projects</div>
+        <CardFooter className="flex justify-between items-center px-4 py-3 bg-slate-50 border-t border-slate-200 text-sm text-slate-500">
+          <div>Displaying {filteredProjects.length} of {projects.length} projects</div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled className="text-slate-600 border-slate-200">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled 
+              className="text-slate-600 border-slate-200 h-9 px-3 text-xs font-medium"
+            >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Previous
             </Button>
-            <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-slate-600 border-slate-200 hover:bg-slate-50 h-9 px-3 text-xs font-medium"
+            >
               Next
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </CardFooter>
-
       </Card>
 
-      {/* Conflicts Card */}
-      <Card className="border border-slate-200 shadow-sm overflow-hidden py-0">
-        <CardHeader className="bg-slate-50 py-3 px-4">
+      {/* Conflicts Card - Updated to match design system */}
+      <Card className="border-slate-200 shadow-sm overflow-hidden py-0">
+        <CardHeader className="bg-slate-50 py-4 px-5 border-b border-slate-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-slate-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-slate-400 mr-2"></span>
+            <CardTitle className="text-slate-800 flex items-center text-lg font-semibold">
+              <span className="h-3 w-3 rounded-full bg-rose-500 mr-2"></span>
               Project Conflicts
             </CardTitle>
-            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">
+            <Badge 
+              variant="outline" 
+              className="bg-rose-50 text-rose-700 border-rose-200 font-medium px-2.5 py-0.5"
+            >
               {conflicts.filter(c => c.status === "Unresolved").length} Unresolved
             </Badge>
           </div>
@@ -426,7 +497,7 @@ const ProjectsDashboard: React.FC = () => {
                   filteredConflicts.map((conflict) => (
                     <tr key={conflict.id} className="border-b hover:bg-slate-50 transition-colors">
                       <td className="p-3 font-medium">
-                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-slate-900 hover:text-slate-700">
+                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-slate-900 hover:text-indigo-600">
                           {conflict.id}
                         </Link>
                       </td>
@@ -434,24 +505,44 @@ const ProjectsDashboard: React.FC = () => {
                       <td className="p-3">
                         <div className="flex flex-wrap gap-1">
                           {conflict.departmentsAffected.map((dept, i) => (
-                            <Badge key={i} variant="outline" className="bg-slate-50 font-normal text-slate-700">
+                            <Badge 
+                              key={i} 
+                              variant="outline" 
+                              className="bg-slate-50 font-medium text-slate-700 border-slate-200"
+                            >
                               {dept}
                             </Badge>
                           ))}
                         </div>
                       </td>
                       <td className="p-3">
-                        <PriorityBadge priority={conflict.severity} />
+                        <Badge 
+                          variant="outline" 
+                          className={`${PRIORITY_STYLES[conflict.severity]} flex items-center px-2 py-0.5 text-xs font-medium`}
+                        >
+                          <span className={`mr-1 h-2 w-2 rounded-full bg-current`}></span>
+                          {conflict.severity}
+                        </Badge>
                       </td>
                       <td className="p-3">
-                        <StatusBadge status={conflict.status} />
+                        <Badge 
+                          variant="outline" 
+                          className={`${STATUS_STYLES[conflict.status]} flex items-center px-2 py-0.5 text-xs font-medium`}
+                        >
+                          {STATUS_ICONS[conflict.status as keyof typeof STATUS_ICONS]}
+                          {conflict.status}
+                        </Badge>
                       </td>
                       <td className="p-3 text-slate-500 text-sm">
                         {formatDate(conflict.createdAt)}
                       </td>
                       <td className="p-3 text-center">
-                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-slate-500 hover:text-slate-700">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                        <Link to={`/hod/conflicts/${conflict.id}`}>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 rounded-full text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
+                          >
                             <ChevronRight className="h-5 w-5" />
                           </Button>
                         </Link>
@@ -459,27 +550,39 @@ const ProjectsDashboard: React.FC = () => {
                     </tr>
                   ))
                 ) : (
-                  <EmptyTableRow colSpan={7} message="No matching conflicts found" />
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500">
+                      No matching conflicts found
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
-          <div>Displaying  {filteredConflicts.length} of {conflicts.length} conflicts</div>
+        <CardFooter className="flex justify-between items-center px-4 py-3 bg-slate-50 border-t border-slate-200 text-sm text-slate-500">
+          <div>Displaying {filteredConflicts.length} of {conflicts.length} conflicts</div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled className="text-slate-600 border-slate-200">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled 
+              className="text-slate-600 border-slate-200 h-9 px-3 text-xs font-medium"
+            >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Previous
             </Button>
-            <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-slate-600 border-slate-200 hover:bg-slate-50 h-9 px-3 text-xs font-medium"
+            >
               Next
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </CardFooter>
-
       </Card>
     </div>
   );
