@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bell, Check, CheckCheck, Filter, ArrowDown, ArrowUp, Settings, RefreshCcw, Search, FileDown } from "lucide-react";
+import { Bell, Check, CheckCheck, Filter, ArrowDown, ArrowUp, Settings, RefreshCcw, Search, FileDown, MessageCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,38 @@ interface Notification {
   title?: string;
   avatar?: string;
 }
+
+// Add this type styling system for notification types
+const typeStyleMap = {
+  message: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    dot: "bg-blue-500",
+    icon: <MessageCircle className="h-4 w-4 text-blue-500" />,
+    label: "Message"
+  },
+  alert: {
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
+    icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+    label: "Alert"
+  },
+  update: {
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    dot: "bg-emerald-500",
+    icon: <RefreshCcw className="h-4 w-4 text-emerald-500" />,
+    label: "Update"
+  },
+  system: {
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    dot: "bg-purple-500",
+    icon: <Settings className="h-4 w-4 text-purple-500" />,
+    label: "System"
+  }
+};
 
 const NotificationComponent: React.FC = () => {
   const dummyNotifications: Notification[] = [
@@ -195,165 +227,160 @@ const NotificationComponent: React.FC = () => {
   };
 
   return (
-    <div className="w-full mx-auto px-4 py-6 space-y-6 max-w-7xl">
-      {/* Header */}
-      <div className="">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="w-full mx-auto px-6 py-8 space-y-8 max-w-7xl">
+      {/* Header with improved spacing and visual hierarchy */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Notifications</h1>
-            <p className="text-slate-500 mt-1">Stay updated with your latest activities and alerts</p>
+            <h1 className="text-2xl font-semibold text-slate-900 mb-2">Notifications</h1>
+            <p className="text-slate-500 text-base">Stay updated with your latest activities and alerts</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={markAllAsRead}
               variant="outline"
               size="sm"
-              className="text-slate-600 border-slate-200 hover:bg-slate-50"
+              className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
             >
-              <CheckCheck className="h-4 w-4 mr-2" />
+              <CheckCheck className="h-4 w-4 mr-2 text-slate-500" />
               Mark all read
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setNotifications(dummyNotifications)}
-              className="text-slate-600 border-slate-200 hover:bg-slate-50"
+              className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
             >
-              <RefreshCcw className="h-4 w-4 mr-2" />
+              <RefreshCcw className="h-4 w-4 mr-2 text-slate-500" />
               Refresh
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="">
+      {/* Filter Section with improved styling */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="relative w-full sm:w-96">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" size={18} />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
             <Input
-              placeholder="Search..."
-              className="pl-8 bg-white"
+              placeholder="Search notifications..."
+              className="pl-10 bg-white border-slate-200 h-10 text-slate-800 focus:border-indigo-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
-                    <Filter className="h-4 w-4 mr-2" />
-                    {typeFilter ? `Filter: ${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}s` : "All Types"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 border-slate-200">
-                  <DropdownMenuLabel className="text-slate-700">Filter by Type</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-slate-100" />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => setTypeFilter(null)} className="text-slate-700">
-                      All Types
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter("message")} className="text-slate-700">
-                      <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
-                      Messages
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter("alert")} className="text-slate-700">
-                      <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
-                      Alerts
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter("update")} className="text-slate-700">
-                      <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
-                      Updates
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter("system")} className="text-slate-700">
-                      <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
-                      System Notices
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="flex items-center gap-3 ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium">
+                  <Filter className="h-4 w-4 mr-2 text-slate-500" />
+                  {typeFilter ? `${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}s` : "All Types"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 border-slate-200">
+                <DropdownMenuLabel className="text-slate-700">Filter by Type</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-100" />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => setTypeFilter(null)} className="text-slate-700">
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("message")} className="text-slate-700">
+                    <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
+                    Messages
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("alert")} className="text-slate-700">
+                    <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
+                    Alerts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("update")} className="text-slate-700">
+                    <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
+                    Updates
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("system")} className="text-slate-700">
+                    <div className="h-2 w-2 rounded-full bg-slate-400 mr-2"></div>
+                    System Notices
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleSortOrder}
-                className="text-slate-600 border-slate-200 hover:bg-slate-50"
-              >
-                {sortOrder === "newest" ? (
-                  <>
-                    <ArrowDown className="h-4 w-4 mr-2" />
-                    Newest First
-                  </>
-                ) : (
-                  <>
-                    <ArrowUp className="h-4 w-4 mr-2" />
-                    Oldest First
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 border-slate-200">
-                  <DropdownMenuLabel className="text-slate-700">Notification Settings</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-slate-100" />
-                  <div className="p-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="show-notifications" className="text-sm text-slate-600">Receive Notifications</Label>
-                      <Switch
-                        id="show-notifications"
-                        checked={showNotifications}
-                        onCheckedChange={setShowNotifications}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="notification-sound" className="text-sm text-slate-600">Play Sound Alerts</Label>
-                      <Switch
-                        id="notification-sound"
-                        checked={notificationSound}
-                        onCheckedChange={setNotificationSound}
-                      />
-                    </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSortOrder}
+              className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium"
+            >
+              {sortOrder === "newest" ? (
+                <>
+                  <ArrowDown className="h-4 w-4 mr-2 text-slate-500" />
+                  Newest
+                </>
+              ) : (
+                <>
+                  <ArrowUp className="h-4 w-4 mr-2 text-slate-500" />
+                  Oldest
+                </>
+              )}
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 font-medium">
+                  <Settings className="h-4 w-4 mr-2 text-slate-500" />
+                  Settings
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 border-slate-200">
+                <DropdownMenuLabel className="text-slate-700">Notification Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-100" />
+                <div className="p-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="show-notifications" className="text-sm text-slate-600">Receive Notifications</Label>
+                    <Switch
+                      id="show-notifications"
+                      checked={showNotifications}
+                      onCheckedChange={setShowNotifications}
+                    />
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="notification-sound" className="text-sm text-slate-600">Play Sound Alerts</Label>
+                    <Switch
+                      id="notification-sound"
+                      checked={notificationSound}
+                      onCheckedChange={setNotificationSound}
+                    />
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
 
-      {/* Tabs OUTSIDE the card */}
+      {/* Tabs with improved styling */}
       <Tabs
         defaultValue="all"
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "all" | "unread" | "read")}
         className="w-full"
       >
-        <TabsList className="bg-white border border-slate-200 mb-6 w-auto">
-          <TabsTrigger value="all">
-            <span className="font-medium">All Notifications</span>
+        <TabsList className="bg-white border border-slate-200 mb-6 w-auto h-11 p-1">
+          <TabsTrigger value="all" className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
+            All Notifications
           </TabsTrigger>
-          <TabsTrigger value="unread">
-            <span className="font-medium">Unread</span>
+          <TabsTrigger value="unread" className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
+            <span>Unread</span>
             {unreadCount > 0 && (
-              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-800 border-slate-200">
+              <Badge variant="outline" className="ml-2 bg-indigo-100 text-indigo-700 border-indigo-200 font-medium">
                 {unreadCount}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="read">
-            <span className="font-medium">Previously Read</span>
+          <TabsTrigger value="read" className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
+            Previously Read
           </TabsTrigger>
         </TabsList>
-
-        {/* Content for each tab inside its own card */}
 
         <TabsContent value="all" className="mt-0">
           <Card className="border-slate-200 shadow-sm overflow-hidden py-0">
@@ -451,48 +478,64 @@ const NotificationList: React.FC<NotificationListProps> = ({
   }
 
   return (
-    <ScrollArea className="h-96">
-      <div className="p-4 grid gap-4">
-        {notifications.map((notification) => (
-          <Card
-            key={notification._id}
-            className={`border-slate-200 shadow-sm overflow-hidden ${!notification.isRead ? "bg-slate-50" : "bg-white"
+    <ScrollArea className="h-[480px]">
+      <div className="p-5 grid gap-4">
+        {notifications.map((notification) => {
+          const typeStyle = typeStyleMap[notification.type || 'system'];
+          
+          return (
+            <Card
+              key={notification._id}
+              className={`border-slate-200 overflow-hidden transition-all ${
+                !notification.isRead 
+                  ? `${typeStyle.bg} border-l-4 ${typeStyle.border}` 
+                  : "bg-white"
               }`}
-          >
-            <CardContent className="p-4">
-              <div className="flex">
-                <div className="mr-4">
-                  <Avatar className="h-10 w-10 bg-slate-200 text-slate-700">
-                    <AvatarFallback className="text-sm font-medium">
-                      {notification.avatar}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between">
-                    <h3 className="text-base font-medium text-slate-900">{notification.title}</h3>
-                    {!notification.isRead && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100 rounded-full"
-                        onClick={() => markAsRead(notification._id)}
-                      >
-                        <Check className="h-4 w-4" />
-                        <span className="sr-only">Mark as read</span>
-                      </Button>
-                    )}
+            >
+              <CardContent className="p-4">
+                <div className="flex">
+                  <div className="mr-4">
+                    <Avatar className={`h-10 w-10 ${
+                      !notification.isRead 
+                        ? "bg-white text-slate-700 ring-2 ring-slate-200" 
+                        : "bg-slate-100 text-slate-700"
+                    }`}>
+                      <AvatarFallback className="text-sm font-medium">
+                        {notification.avatar}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
-                  <p className="text-sm text-slate-500">{formatDate(notification.createdAt)}</p>
-                  <p className="mt-1 text-sm text-slate-700">{notification.message}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center">
+                        <h3 className="text-base font-medium text-slate-900 mr-2">{notification.title}</h3>
+                        <Badge variant="outline" className={`${typeStyle.bg} border-0 text-xs font-medium px-2 py-0.5`}>
+                          {typeStyle.label}
+                        </Badge>
+                      </div>
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-slate-500 hover:bg-white hover:text-indigo-600 rounded-full"
+                          onClick={() => markAsRead(notification._id)}
+                        >
+                          <Check className="h-4 w-4" />
+                          <span className="sr-only">Mark as read</span>
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 mb-2">{formatDate(notification.createdAt)}</p>
+                    <p className="text-sm text-slate-700 leading-relaxed">{notification.message}</p>
+                  </div>
                 </div>
-              </div>
-              {!notification.isRead && (
-                <div className="h-1 w-1 bg-slate-400 absolute top-4 right-4 rounded-full"></div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                {!notification.isRead && (
+                  <div className={`h-2 w-2 ${typeStyle.dot} top-4 right-4 rounded-full`}></div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </ScrollArea>
   );
