@@ -17,6 +17,8 @@ import {
   MapPin,
   Users,
   Briefcase,
+  PlusCircle,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,15 +27,28 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ExtendedProject from "@/types/ExtendedProject";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
   const [project, setProject] = useState<ExtendedProject>();
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [newStartDate, setNewStartDate] = useState<string>("");
+  const [newEndDate, setNewEndDate] = useState<string>("");
 
   const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
@@ -50,11 +65,48 @@ const ViewProject = () => {
         setError("Failed to load project details");
         setLoading(false);
       });
+
+    axios.get("conflits/department").then((res) => {
+      setConflicts(res.data.data);
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
     fetchProject();
   }, []);
+
+  useEffect(() => {
+    if (project?.schedule.start) {
+      setNewStartDate(new Date(project.schedule.start).toISOString().split('T')[0]);
+    }
+    if (project?.schedule.end) {
+      setNewEndDate(new Date(project.schedule.end).toISOString().split('T')[0]);
+    }
+  }, [project]);
+
+  const handleReschedule = async () => {
+    if (!newStartDate || !newEndDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+
+    const pid = window.location.pathname.split("/").pop();
+
+    try {
+      await axios.put(`projects/${pid}/reschedule`, {
+        start: newStartDate,
+        end: newEndDate
+      });
+
+      toast.success("Project rescheduled successfully");
+      fetchProject(); // Refresh project data
+      setIsRescheduleModalOpen(false);
+    } catch (err) {
+      console.error("Error rescheduling project:", err);
+      toast.error("Failed to reschedule project");
+    }
+  };
 
   const uploadDoc = () => {
     if (fileInputRef.current) {
@@ -141,6 +193,50 @@ const ViewProject = () => {
         accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.ppt,.pptx"
       />
 
+      {/* Reschedule Modal */}
+      <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reschedule Project</DialogTitle>
+            <DialogDescription>
+              Update the project timeline by selecting new start and end dates.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="start-date" className="text-right">
+                Start Date
+              </Label>
+              <input
+                id="start-date"
+                type="date"
+                value={newStartDate}
+                onChange={(e) => setNewStartDate(e.target.value)}
+                className="col-span-3 p-2 border rounded"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="end-date" className="text-right">
+                End Date
+              </Label>
+              <input
+                id="end-date"
+                type="date"
+                value={newEndDate}
+                onChange={(e) => setNewEndDate(e.target.value)}
+                className="col-span-3 p-2 border rounded"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRescheduleModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-sm font-medium" onClick={handleReschedule}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
@@ -149,10 +245,13 @@ const ViewProject = () => {
             <span>{project.department?.name || "No Department"}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">Edit Project</Button>
-          <Button>Share Project</Button>
-        </div>
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium"
+          onClick={() => setIsRescheduleModalOpen(true)}
+        >
+          <ArrowLeftRight size={16} className="mr-2" />
+          Reschedule
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -185,7 +284,10 @@ const ViewProject = () => {
                   <Separator />
 
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Schedule</h3>
+                    <h3 className="text-lg font-medium mb-2 flex justify-between items-center">
+                      <span>Schedule</span>
+
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-md">
@@ -280,35 +382,47 @@ const ViewProject = () => {
             </TabsContent>
 
             <TabsContent value="resources">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Resources</CardTitle>
-                  <CardDescription>
+              <Card className="border-slate-200 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <Users size={18} className="text-slate-600" />
+                    Project Resources
+                  </CardTitle>
+                  <CardDescription className="text-slate-500">
                     Resources allocated to this project
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4">
                   {project.resources.length > 0 ? (
                     <div className="space-y-2">
                       {project.resources.map((resource, index) => (
                         <div
                           key={index}
-                          className="flex items-center p-3 border rounded-lg hover:bg-accent"
+                          className="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                          <Users className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{resource}</span>
+                          <Users className="h-5 w-5 mr-2 text-slate-500" />
+                          <span className="text-slate-700">{resource}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                      <p>No resources assigned</p>
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Users className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <p className="text-slate-500">No resources assigned</p>
+                      <p className="text-sm text-slate-400 mt-1">
+                        Add resources to track project allocation
+                      </p>
                     </div>
                   )}
                 </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
+                <CardFooter className="pt-3 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    className="w-full text-slate-700 border-slate-200 hover:bg-slate-50 h-10 px-4 text-sm font-medium"
+                  >
+                    <PlusCircle size={16} className="mr-2 text-slate-500" />
                     Add Resource
                   </Button>
                 </CardFooter>

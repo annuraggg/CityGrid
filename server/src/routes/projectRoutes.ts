@@ -9,5 +9,6 @@ app.get("/department/:departmentId", projectController.getDepartmentProjects);
 app.get("/:id", projectController.getProject);
 app.put("/:id", projectController.updateProject);
 app.delete("/:id", projectController.deleteProject);
+app.post("/conflict", projectController.createConflict);
 
 export default app;

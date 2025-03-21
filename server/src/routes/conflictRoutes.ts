@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import conflictController from "../controllers/conflictController.js";
 const app = new Hono();
 
+app.post("/check", conflictController.checkConflicts);
 app.post("/", conflictController.createConflict);
 app.get("/department", conflictController.getDepartmentConflicts);
 app.get("/:id", conflictController.getConflict);
