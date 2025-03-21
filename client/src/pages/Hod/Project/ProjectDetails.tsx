@@ -353,36 +353,6 @@ const ProjectDetails: React.FC = () => {
                           <p className="text-sm text-slate-600">{item.date}</p>
                         </div>
                       </div>
-<<<<<<< HEAD
-=======
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="documents">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Documents</CardTitle>
-                  <CardDescription>
-                    All documents associated with this project
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {project.documents.length > 0 ? (
-                    <div className="space-y-2">
-                      {project.documents.map((doc, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc.id)}
-                        >
-                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{doc.name}</span>
-                        </div>
-                      ))}
->>>>>>> bb84bbfd4e252635d1060853e16a85b77bfc51f1
                     </div>
                   ))}
                 </div>
@@ -432,67 +402,4 @@ const ProjectDetails: React.FC = () => {
   );
 };
 
-<<<<<<< HEAD
 export default ProjectDetails;
-=======
-const LoadingSkeleton = () => (
-  <div className="container mx-auto py-8 px-4 max-w-6xl">
-    <div className="mb-8">
-      <Skeleton className="h-10 w-1/3 mb-2" />
-      <Skeleton className="h-4 w-1/5" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
-        <Skeleton className="h-12 w-1/3 mb-4" />
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </div>
-      <div>
-        <Skeleton className="h-80 w-full rounded-lg" />
-      </div>
-    </div>
-  </div>
-);
-
-const ErrorState = ({ message }: { message: string }) => (
-  <div className="container mx-auto py-16 px-4 text-center">
-    <div className="bg-destructive/10 text-destructive p-4 rounded-lg inline-block mb-4">
-      <FileText className="h-12 w-12" />
-    </div>
-    <h2 className="text-2xl font-bold mb-2">{message}</h2>
-    <p className="text-muted-foreground mb-6">
-      Unable to display project information
-    </p>
-    <Button variant="outline">Go Back</Button>
-  </div>
-);
-
-const calculateDuration = (start: Date, end: Date): string => {
-  if (!start || !end) return "No timeline set";
-
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  return `${diffDays} days`;
-};
-
-const calculateProgress = (start: Date, end: Date): number => {
-  if (!start || !end) return 0;
-
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const currentDate = new Date();
-
-  if (currentDate < startDate) return 0;
-  if (currentDate > endDate) return 100;
-
-  const totalDuration = endDate.getTime() - startDate.getTime();
-  const elapsedDuration = currentDate.getTime() - startDate.getTime();
-
-  return Math.round((elapsedDuration / totalDuration) * 100);
-};
-
-export default ViewProject;
->>>>>>> bb84bbfd4e252635d1060853e16a85b77bfc51f1
