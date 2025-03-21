@@ -37,6 +37,7 @@ const getProjects = async (c: Context) => {
 
 const createProject = async (c: Context) => {
   const data = await c.req.json();
+  console.log(c.get("auth"));
 
   try {
     const user = await User.findById(c.get("auth")?._id);
@@ -45,6 +46,7 @@ const createProject = async (c: Context) => {
     }
     const project = await Project.create({
       ...data,
+      _id: undefined,
       manager: c.get("auth")?._id,
       department: user?.department,
     });

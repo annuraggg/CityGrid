@@ -129,6 +129,9 @@ const router = createBrowserRouter([
       { path: "notifications", element: <ProjectManagerNotifications /> },
     ],
   },
+  {
+    path: "*",
+  }
 ]);
 
 function App() {
