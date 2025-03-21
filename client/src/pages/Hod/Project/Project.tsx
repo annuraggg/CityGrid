@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,13 +9,16 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Search,
-  Filter,
-  RefreshCw,
+  SlidersHorizontal,
+  RotateCw,
   ChevronRight,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   CheckCircle2,
   Calendar,

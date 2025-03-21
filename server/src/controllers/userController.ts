@@ -177,5 +177,4 @@ export default {
   userCreated,
   userDeleted,
   userUpdated,
-  getTeam,
 };

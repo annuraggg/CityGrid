@@ -116,6 +116,7 @@ const ResourceManagement: React.FC = () => {
       .toUpperCase();
   };
 
+  // Replace colorful gradients with professional slate backgrounds
   const getResourceBgColor = (id: string): string => {
     const colors = [
       "from-purple-500 to-indigo-600",
@@ -171,6 +172,7 @@ const ResourceManagement: React.FC = () => {
         valueA = valueA.toLowerCase();
         valueB = valueB.toLowerCase();
       }
+
 
       if (valueA < valueB) {
         return sortDirection === "asc" ? -1 : 1;
@@ -351,8 +353,8 @@ const ResourceManagement: React.FC = () => {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Card>
         <CardContent className="p-0">

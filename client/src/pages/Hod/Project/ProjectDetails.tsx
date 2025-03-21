@@ -1,22 +1,20 @@
-import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
-import { useEffect, useState, useRef } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Calendar,
-  Clock,
-  FileText,
+  Download,
   MapPin,
-  Users,
-  Briefcase,
+  Building,
+  CalendarClock,
+  FileText,
+  ExternalLink,
+  Clock,
+  ChevronLeft
   Share2,
   Edit,
   Download,
@@ -210,18 +208,34 @@ const ViewProject = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="documents">
-                Documents ({project.documents.length})
-              </TabsTrigger>
-              <TabsTrigger value="resources">
-                Resources ({project.resources.length})
-              </TabsTrigger>
-            </TabsList>
+      {/* Project Content Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="bg-white border border-slate-200 mb-6 w-auto h-11 p-1">
+          <TabsTrigger 
+            value="overview" 
+            className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger 
+            value="documents" 
+            className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+          >
+            Documents
+          </TabsTrigger>
+          <TabsTrigger 
+            value="schedule" 
+            className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+          >
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger 
+            value="team" 
+            className="h-9 px-4 text-sm font-medium data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+          >
+            Team Members
+          </TabsTrigger>
+        </TabsList>
 
             <TabsContent value="overview">
               <Card className="shadow-sm">
@@ -470,8 +484,8 @@ const ViewProject = () => {
               </Button>
             </CardFooter>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

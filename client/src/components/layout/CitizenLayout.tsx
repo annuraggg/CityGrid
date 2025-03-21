@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import HodSidebar from "./../ui/HodSidebar";
+import CitizenSidebar from "./../ui/CitizenSidebar";
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
 
 const Layout = () => {
@@ -7,8 +7,8 @@ const Layout = () => {
     <>
       <SignedIn>
         <div className="flex gap-5">
-          <HodSidebar />
-          <div className="h-screen w-full overflow-y-scroll">
+          <CitizenSidebar />
+          <div className="h-screen overflow-y-auto w-full">
             <Outlet />
           </div>
         </div>

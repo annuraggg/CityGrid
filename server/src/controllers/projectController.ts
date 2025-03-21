@@ -11,7 +11,6 @@ const getProject = async (c: Context) => {
     const project = await Project.findById(id)
       .populate("documents")
       .populate("manager")
-      .populate("department")
       .lean();
     if (!project) {
       return sendError(c, 404, "Project not found");
@@ -91,6 +90,8 @@ const deleteProject = async (c: Context) => {
 
 const getDepartmentProjects = async (c: Context) => {
   const department = c.req.param("department");
+
+  console.log(department);
 
   try {
     const projects = await Project.find({ department }).lean();

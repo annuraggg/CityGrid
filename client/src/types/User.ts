@@ -1,10 +1,8 @@
 type User = {
-  _id: string;
   clerkId: string;
   role: "pm" | "citizen" | "hod";
-  name: string;
-  email: string;
   department?: string;
+  uid?: string;
   createdAt: Date;
   updatedAt: Date;
 };

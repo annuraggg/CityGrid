@@ -1,4 +1,5 @@
 import ax from "@/config/axios";
+import IProject from "@/types/Project";
 import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -24,16 +25,17 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import ExtendedProject from "@/types/ExtendedProject";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
-  const [project, setProject] = useState<ExtendedProject>();
+  const [project, setProject] = useState<IProject>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [verificationStatus, setVerificationStatus] = useState<Record<string, boolean>>({});
+  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
 
   const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
@@ -84,17 +86,39 @@ const ViewProject = () => {
 
       toast.success("Document uploaded successfully");
 
-      // Refresh project data
       fetchProject();
     } catch (err) {
       console.error("Error uploading document:", err);
       toast.error("Failed to upload document");
     } finally {
       setUploading(false);
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const verifyDocument = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (verifyingDocId === docId) return; 
+    
+    setVerifyingDocId(docId);
+    
+    try {
+      const res = await axios.get(`documents/${docId}/verify`);
+      setVerificationStatus(prev => ({ ...prev, [docId]: res.data.data.verified }));
+      
+      if (res.data.data.verified) {
+        toast.success("Document successfully verified on blockchain");
+      } else {
+        toast.error("Document verification failed - hash mismatch");
+      }
+    } catch (err) {
+      console.error("Error during verification:", err);
+      toast.error("Verification process failed");
+    } finally {
+      setVerifyingDocId(null);
     }
   };
 
@@ -122,7 +146,6 @@ const ViewProject = () => {
     return <ErrorState message="Project not found" />;
   }
 
-  // Format dates
   const startDate = project.schedule.start
     ? format(new Date(project.schedule.start), "MMMM dd, yyyy")
     : "Not set";
@@ -132,7 +155,6 @@ const ViewProject = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -146,7 +168,7 @@ const ViewProject = () => {
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
           <div className="flex items-center gap-2 mt-2 text-muted-foreground">
             <Briefcase className="h-4 w-4" />
-            <span>{project.department?.name || "No Department"}</span>
+            <span>{project.department || "No Department"}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -252,10 +274,34 @@ const ViewProject = () => {
                         <div
                           key={index}
                           className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc._id)}
+                          onClick={() => downloadFile(doc)}
                         >
-                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{doc.name}</span>
+                          <div 
+                            className="flex items-center cursor-pointer" 
+                            onClick={() => downloadFile(doc)}
+                          >
+                            <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span>{doc}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              disabled={verifyingDocId === doc}
+                              onClick={(e) => verifyDocument(doc, e)}
+                            >
+                              {verifyingDocId === doc 
+                                ? "Verifying..." 
+                                : verificationStatus[doc] 
+                                  ? "Verified ✅" 
+                                  : "Verify"}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              onClick={() => downloadFile(doc)}
+                            >
+                              Download
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -327,9 +373,9 @@ const ViewProject = () => {
                 <p className="text-sm font-medium mb-1">Project Manager</p>
                 <div className="flex items-center gap-2 p-3 border rounded-lg">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                    {project.manager._id.charAt(0).toUpperCase()}
+                    {project.manager.charAt(0).toUpperCase()}
                   </div>
-                  <span>{project.manager._id}</span>
+                  <span>{project.manager}</span>
                 </div>
               </div>
 
@@ -373,7 +419,6 @@ const ViewProject = () => {
   );
 };
 
-// Helper components
 const LoadingSkeleton = () => (
   <div className="container mx-auto py-8 px-4 max-w-6xl">
     <div className="mb-8">
@@ -405,7 +450,6 @@ const ErrorState = ({ message }: { message: string }) => (
   </div>
 );
 
-// Helper functions
 const calculateDuration = (start: Date, end: Date): string => {
   if (!start || !end) return "No timeline set";
 

@@ -1,3 +1,5 @@
+// merge conflict
+
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,13 +20,27 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import ax from "@/config/axios";
 import { toast } from "sonner";
-import { Search, UserPlus, Edit, MoreHorizontal } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  Edit,
+  MoreHorizontal,
+  FileDown,
+  Filter,
+  ArrowLeft,
+  ArrowRight,
+  Users,
+  ClipboardList,
+  Building
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ExtendedUser from "@/types/ExtendedUser";
 
 const Team = () => {
   const [newMemberEmail, setNewMemberEmail] = useState("");
@@ -33,48 +49,48 @@ const Team = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { getToken } = useAuth();
-  const { user } = useUser();
   const axios = ax(getToken);
-
-  const [team, setTeam] = useState<ExtendedUser[]>([]);
-
-  useEffect(() => {
-    if (!user || !user.publicMetadata.department) return;
-    const dept = user.publicMetadata.department;
-    axios
-      .get("/users/team/" + dept)
-      .then((res) => {
-        setTeam(res.data.data);
-      })
-      .catch(() => {
-        toast.error("Failed to fetch team members");
-      });
-  }, [user]);
 
   const addTeamMember = async () => {
     axios
       .post(`/invites/${newMemberRole}`, { email: newMemberEmail })
       .then(() => {
-        toast.success(
-          `${
-            newMemberRole === "project-manager"
-              ? "Project Manager"
-              : "Head of Department"
-          } invited successfully`
-        );
+        toast.success(`${newMemberRole === "project-manager" ? "Project Manager" : "Department Head"} invitation sent successfully`);
         setDialogOpen(false);
         setNewMemberEmail("");
       })
       .catch(() => {
-        toast.error(
-          `Failed to invite ${
-            newMemberRole === "project-manager"
-              ? "Project Manager"
-              : "Head of Department"
-          }`
-        );
+        toast.error(`Failed to send invitation to ${newMemberRole === "project-manager" ? "Project Manager" : "Department Head"}`);
       });
   };
+
+  const projectManagers = [
+    { id: 1, name: "John Doe", department: "IT", email: "john.doe@example.com", status: "Active", projects: 5 },
+    { id: 2, name: "Jane Doe", department: "HR", email: "jane.doe@example.com", status: "Active", projects: 3 },
+    { id: 3, name: "Robert Smith", department: "Marketing", email: "robert.smith@example.com", status: "On Leave", projects: 2 },
+    { id: 4, name: "Emily Johnson", department: "Finance", email: "emily.j@example.com", status: "Active", projects: 4 },
+    { id: 5, name: "Michael Brown", department: "Operations", email: "m.brown@example.com", status: "Active", projects: 7 },
+  ];
+
+  const hods = [
+    { id: 1, name: "Jennifer White", department: "IT", email: "j.white@example.com", status: "Active", teamSize: 15 },
+    { id: 2, name: "David Wilson", department: "HR", email: "d.wilson@example.com", status: "Active", teamSize: 8 },
+    { id: 3, name: "Sarah Miller", department: "Marketing", email: "s.miller@example.com", status: "Active", teamSize: 12 },
+    { id: 4, name: "James Taylor", department: "Finance", email: "j.taylor@example.com", status: "On Leave", teamSize: 7 },
+    { id: 5, name: "Lisa Anderson", department: "Operations", email: "l.anderson@example.com", status: "Active", teamSize: 20 },
+  ];
+
+  const filteredPMs = projectManagers.filter(
+    pm => pm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pm.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pm.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredHODs = hods.filter(
+    hod => hod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hod.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hod.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full">
@@ -108,11 +124,16 @@ const Team = () => {
                       id="role"
                       className="w-full rounded-md border border-input p-2 text-sm"
                       value={newMemberRole}
-                      onChange={(e) => setNewMemberRole(e.target.value)}
+                      onValueChange={setNewMemberRole}
                     >
-                      <option value="project-manager">Project Manager</option>
-                      <option value="hod">Head of Department</option>
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="project-manager">Project Manager</SelectItem>
+                        <SelectItem value="hod">Department Head</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-3">
@@ -122,7 +143,7 @@ const Team = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="example@company.com"
+                    placeholder="colleague@municipality.gov"
                     value={newMemberEmail}
                     onChange={(e) => setNewMemberEmail(e.target.value)}
                     className="col-span-3 text-sm"
@@ -169,6 +190,70 @@ const Team = () => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Statistics Cards - Updated with consistent styling */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+          <div className="flex items-center p-5">
+            <div className="flex-shrink-0 bg-indigo-50 p-3 rounded-lg mr-4">
+              <Users className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-medium text-slate-500 mb-1">Team Members</p>
+              <div className="flex items-baseline">
+                <p className="text-2xl font-semibold text-slate-900 mr-2">{projectManagers.length + hods.length}</p>
+                <p className="text-sm text-slate-500">management personnel</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+          <div className="flex items-center p-5">
+            <div className="flex-shrink-0 bg-emerald-50 p-3 rounded-lg mr-4">
+              <ClipboardList className="h-6 w-6 text-emerald-600" />
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-medium text-slate-500 mb-1">Active Projects</p>
+              <div className="flex items-baseline">
+                <p className="text-2xl font-semibold text-slate-900 mr-2">{projectManagers.reduce((sum, pm) => sum + pm.projects, 0)}</p>
+                <p className="text-sm text-slate-500">in progress</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+          <div className="flex items-center p-5">
+            <div className="flex-shrink-0 bg-blue-50 p-3 rounded-lg mr-4">
+              <Building className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-medium text-slate-500 mb-1">Departments</p>
+              <div className="flex items-baseline">
+                <p className="text-2xl font-semibold text-slate-900 mr-2">{new Set(hods.map(hod => hod.department)).size}</p>
+                <p className="text-sm text-slate-500">active units</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+          <div className="flex items-center p-5">
+            <div className="flex-shrink-0 bg-purple-50 p-3 rounded-lg mr-4">
+              <Users className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-medium text-slate-500 mb-1">Total Staff</p>
+              <div className="flex items-baseline">
+                <p className="text-2xl font-semibold text-slate-900 mr-2">{hods.reduce((sum, hod) => sum + hod.teamSize, 0)}</p>
+                <p className="text-sm text-slate-500">across all departments</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
         <Tabs defaultValue="project-managers" className="w-full">
           <TabsList className="mb-4">
@@ -259,10 +344,12 @@ const Team = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="h-7 text-xs">
                   Next
+                  <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
             </div>
-          </TabsContent>
+          </Card>
+        </TabsContent>
 
           <TabsContent value="hods" className="w-full">
             <div className="bg-white rounded-md border shadow-sm w-full overflow-hidden">
@@ -347,6 +434,7 @@ const Team = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="h-7 text-xs">
                   Next
+                  <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
             </div>
