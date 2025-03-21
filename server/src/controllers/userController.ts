@@ -4,6 +4,7 @@ import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
 import clerkClient from "../config/clerk.js";
 import PendingInvite from "../models/PendingInvite.js";
+import Department from "../models/Department.js";
 
 const userCreated = async (c: Context) => {
   const { data } = await c.req.json();
@@ -25,7 +26,6 @@ const userCreated = async (c: Context) => {
     const u = await User.create({
       clerkId: id,
       email: email.email_address,
-      department,
       name: data.first_name + " " + data.last_name,
       role,
     });
@@ -34,9 +34,53 @@ const userCreated = async (c: Context) => {
       email: email.email_address,
     });
 
+    if (role === "hod") {
+      const newDepartment = await Department.create({
+        hod: u._id,
+      });
+
+      await u.updateOne({
+        department: newDepartment._id,
+      });
+
+      await newDepartment.save();
+      await u.save();
+
+      const meta = (await clerkClient.users.getUser(id)).publicMetadata;
+      console.log(u._id);
+      await clerkClient.users.updateUser(id, {
+        publicMetadata: {
+          ...meta,
+          _id: u._id,
+          department: newDepartment._id,
+        },
+      });
+
+      const parentDept = await Department.findOne({
+        _id: department,
+      });
+
+      if (parentDept) {
+        await parentDept.updateOne({
+          $push: {
+            departments: newDepartment._id,
+          },
+        });
+      }
+
+      return sendSuccess(c, 200, "User created successfully");
+    } else {
+      await u.updateOne({
+        department: department,
+      });
+
+      await u.save();
+    }
+
+    const meta = (await clerkClient.users.getUser(id)).publicMetadata;
     clerkClient.users.updateUser(id, {
       publicMetadata: {
-        department,
+        ...meta,
         role,
         _id: u._id,
       },
@@ -94,9 +138,35 @@ const userUpdated = async (c: Context) => {
 
 const getTeam = async (c: Context) => {
   const department = c.req.param("dept");
+  const userId = c.get("auth")._id;
   try {
-    const users = await User.find({ department }).populate("department");
-    return sendSuccess(c, 200, "Team fetched successfully", users);
+    const users = await User.find({
+      department,
+      _id: { $ne: [userId] },
+    }).populate("department");
+    const dep = await Department.findOne({ _id: department }).populate({
+      path: "departments",
+      populate: {
+        path: "hod",
+        populate: {
+          path: "department", // Populate the department inside hod
+        },
+      },
+    });
+
+    const deptMap = dep?.departments.map((d) => {
+      //@ts-ignore
+      return d.hod;
+    });
+
+    if (!dep) {
+      return sendError(c, 404, "Department not found");
+    }
+
+    //@ts-ignore
+    const finalArr = [...users, ...deptMap];
+    console.log(finalArr);
+    return sendSuccess(c, 200, "Team fetched successfully", finalArr);
   } catch (error) {
     logger.error(error as string);
     return sendError(c, 500, "Failed to get team");

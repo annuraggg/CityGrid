@@ -17,13 +17,6 @@ import {
   MapPin,
   Users,
   Briefcase,
-  Share2,
-  Edit,
-  Download,
-  Upload,
-  ArrowLeft,
-  User,
-  Timer,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,22 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import ExtendedProject from "@/types/ExtendedProject";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
-  const [project, setProject] = useState<ExtendedProject>(
-    {} as ExtendedProject
-  );
+  const [project, setProject] = useState<ExtendedProject>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -57,7 +40,7 @@ const ViewProject = () => {
     setLoading(true);
 
     axios
-      .get(`projects/${pid}`)
+      .get("projects/" + pid)
       .then((res) => {
         setProject(res.data.data);
         setLoading(false);
@@ -100,12 +83,15 @@ const ViewProject = () => {
       });
 
       toast.success("Document uploaded successfully");
+
+      // Refresh project data
       fetchProject();
     } catch (err) {
       console.error("Error uploading document:", err);
       toast.error("Failed to upload document");
     } finally {
       setUploading(false);
+      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -137,27 +123,15 @@ const ViewProject = () => {
   }
 
   // Format dates
-  const startDate = project.schedule?.start
-    ? format(new Date(project.schedule?.start), "MMMM dd, yyyy")
+  const startDate = project.schedule.start
+    ? format(new Date(project.schedule.start), "MMMM dd, yyyy")
     : "Not set";
-  const endDate = project.schedule?.end
-    ? format(new Date(project.schedule?.end), "MMMM dd, yyyy")
+  const endDate = project.schedule.end
+    ? format(new Date(project.schedule.end), "MMMM dd, yyyy")
     : "Not set";
-
-  const getProgressColor = (progress: number) => {
-    if (progress < 25) return "bg-red-500";
-    if (progress < 50) return "bg-amber-500";
-    if (progress < 75) return "bg-yellow-500";
-    return "bg-emerald-500";
-  };
-
-  const progressPercentage = calculateProgress(
-    project.schedule?.start,
-    project.schedule?.end
-  );
 
   return (
-    <div className="container mx-auto py-8 px-4 ">
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
       {/* Hidden file input */}
       <input
         type="file"
@@ -167,46 +141,17 @@ const ViewProject = () => {
         accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.ppt,.pptx"
       />
 
-      <div className="flex items-center text-muted-foreground mb-6">
-        <Button variant="ghost" size="sm" className="gap-1">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Projects
-        </Button>
-      </div>
-
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {project.name}
-            </h1>
-            {project.schedule?.isRescheduled && (
-              <Badge variant="outline" className="ml-2">
-                Rescheduled
-              </Badge>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
           <div className="flex items-center gap-2 mt-2 text-muted-foreground">
             <Briefcase className="h-4 w-4" />
             <span>{project.department?.name || "No Department"}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit Project</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <Button className="gap-2">
-            <Share2 className="h-4 w-4" />
-            Share Project
-          </Button>
+          <Button variant="outline">Reject</Button>
+          <Button>Accept</Button>
         </div>
       </div>
 
@@ -224,12 +169,10 @@ const ViewProject = () => {
             </TabsList>
 
             <TabsContent value="overview">
-              <Card className="shadow-sm">
+              <Card>
                 <CardHeader>
                   <CardTitle>Project Details</CardTitle>
-                  <CardDescription>
-                    Complete overview of {project.name}
-                  </CardDescription>
+                  <CardDescription>Overview of {project.name}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
@@ -244,7 +187,7 @@ const ViewProject = () => {
                   <div>
                     <h3 className="text-lg font-medium mb-2">Schedule</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-md">
                           <Calendar className="h-5 w-5 text-primary" />
                         </div>
@@ -254,7 +197,7 @@ const ViewProject = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-md">
                           <Calendar className="h-5 w-5 text-primary" />
                         </div>
@@ -264,6 +207,11 @@ const ViewProject = () => {
                         </div>
                       </div>
                     </div>
+                    {project.schedule.isRescheduled && (
+                      <Badge className="mt-2" variant="outline">
+                        Rescheduled
+                      </Badge>
+                    )}
                   </div>
 
                   {project.location && (
@@ -271,14 +219,13 @@ const ViewProject = () => {
                       <Separator />
                       <div>
                         <h3 className="text-lg font-medium mb-2">Location</h3>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <div className="p-2 bg-primary/10 rounded-md">
                             <MapPin className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium">Coordinates</p>
                             <p className="text-muted-foreground">
-                              {project.location.latitude},{" "}
+                              Coordinates: {project.location.latitude},{" "}
                               {project.location.longitude}
                             </p>
                           </div>
@@ -291,7 +238,7 @@ const ViewProject = () => {
             </TabsContent>
 
             <TabsContent value="documents">
-              <Card className="shadow-sm">
+              <Card>
                 <CardHeader>
                   <CardTitle>Project Documents</CardTitle>
                   <CardDescription>
@@ -304,40 +251,28 @@ const ViewProject = () => {
                       {project.documents.map((doc, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+                          className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                          onClick={() => downloadFile(doc._id)}
                         >
-                          <div className="flex items-center">
-                            <FileText className="h-5 w-5 mr-3 text-muted-foreground" />
-                            <span className="font-medium">{doc.name}</span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadFile(doc._id)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                          <span>{doc.name}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p className="font-medium">No documents available</p>
-                      <p className="text-sm mt-1">
-                        Upload a document to get started
-                      </p>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                      <p>No documents available</p>
                     </div>
                   )}
                 </CardContent>
                 <CardFooter>
                   <Button
                     variant="outline"
-                    className="w-full gap-2"
+                    className="w-full"
                     onClick={uploadDoc}
                     disabled={uploading}
                   >
-                    <Upload className="h-4 w-4" />
                     {uploading ? "Uploading..." : "Upload Document"}
                   </Button>
                 </CardFooter>
@@ -345,7 +280,7 @@ const ViewProject = () => {
             </TabsContent>
 
             <TabsContent value="resources">
-              <Card className="shadow-sm">
+              <Card>
                 <CardHeader>
                   <CardTitle>Project Resources</CardTitle>
                   <CardDescription>
@@ -358,26 +293,22 @@ const ViewProject = () => {
                       {project.resources.map((resource, index) => (
                         <div
                           key={index}
-                          className="flex items-center p-3 border rounded-lg hover:bg-accent transition-colors"
+                          className="flex items-center p-3 border rounded-lg hover:bg-accent"
                         >
-                          <Users className="h-5 w-5 mr-3 text-muted-foreground" />
-                          <span className="font-medium">{resource}</span>
+                          <Users className="h-5 w-5 mr-2 text-muted-foreground" />
+                          <span>{resource}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p className="font-medium">No resources assigned</p>
-                      <p className="text-sm mt-1">
-                        Add resources to improve project management
-                      </p>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                      <p>No resources assigned</p>
                     </div>
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full gap-2">
-                    <Users className="h-4 w-4" />
+                  <Button variant="outline" className="w-full">
                     Add Resource
                   </Button>
                 </CardFooter>
@@ -387,88 +318,54 @@ const ViewProject = () => {
         </div>
 
         <div>
-          <Card className="shadow-sm">
+          <Card>
             <CardHeader>
               <CardTitle>Project Management</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium mb-2">Project Manager</p>
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Avatar>
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {project.manager._id.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{project.manager._id}</p>
-                    <p className="text-sm text-muted-foreground">Manager</p>
+                <p className="text-sm font-medium mb-1">Project Manager</p>
+                <div className="flex items-center gap-2 p-3 border rounded-lg">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {project.manager._id.charAt(0).toUpperCase()}
                   </div>
+                  <span>{project.manager._id}</span>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium mb-2">Project ID</p>
-                <div className="p-3 border rounded-lg flex items-center justify-between">
-                  <code className="font-mono text-sm text-muted-foreground truncate">
-                    {project._id}
-                  </code>
+                <p className="text-sm font-medium mb-1">Project ID</p>
+                <div className="p-3 border rounded-lg truncate font-mono text-sm text-muted-foreground">
+                  {project._id}
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium mb-2">Project Timeline</p>
+                <p className="text-sm font-medium mb-1">Project Timeline</p>
                 <div className="p-3 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Timer className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Duration:{" "}
-                        {calculateDuration(
-                          project.schedule?.start,
-                          project.schedule?.end
-                        )}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {progressPercentage}%
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {calculateDuration(
+                        project.schedule.start,
+                        project.schedule.end
+                      )}
                     </span>
                   </div>
-                  <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-secondary h-2 rounded-full">
                     <div
-                      className={`h-2 rounded-full ${getProgressColor(
-                        progressPercentage
-                      )}`}
-                      style={{ width: `${progressPercentage}%` }}
+                      className="bg-primary h-2 rounded-full"
+                      style={{
+                        width: `${calculateProgress(
+                          project.schedule.start,
+                          project.schedule.end
+                        )}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
               </div>
-
-              {/* Project Status Summary */}
-              <div>
-                <p className="text-sm font-medium mb-2">Status Summary</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 border rounded-lg text-center">
-                    <p className="text-2xl font-semibold mb-1">
-                      {project.documents.length}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Documents</p>
-                  </div>
-                  <div className="p-3 border rounded-lg text-center">
-                    <p className="text-2xl font-semibold mb-1">
-                      {project.resources.length}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Resources</p>
-                  </div>
-                </div>
-              </div>
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                View Detailed Reports
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </div>
@@ -497,16 +394,14 @@ const LoadingSkeleton = () => (
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="container mx-auto py-16 px-4 text-center">
-    <Alert variant="destructive" className="max-w-md mx-auto">
-      <div className="flex flex-col items-center py-4">
-        <FileText className="h-12 w-12 mb-4" />
-        <h2 className="text-xl font-bold mb-2">{message}</h2>
-        <AlertDescription className="mb-6">
-          Unable to display project information
-        </AlertDescription>
-        <Button variant="outline">Return to Dashboard</Button>
-      </div>
-    </Alert>
+    <div className="bg-destructive/10 text-destructive p-4 rounded-lg inline-block mb-4">
+      <FileText className="h-12 w-12" />
+    </div>
+    <h2 className="text-2xl font-bold mb-2">{message}</h2>
+    <p className="text-muted-foreground mb-6">
+      Unable to display project information
+    </p>
+    <Button variant="outline">Go Back</Button>
   </div>
 );
 

@@ -3,6 +3,7 @@ import clerkClient from "../config/clerk.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import PendingInvite from "../models/PendingInvite.js";
 import User from "../models/User.js";
+import Department from "../models/Department.js";
 
 const inviteProjectManager = async (c: Context) => {
   try {
@@ -49,9 +50,6 @@ const inviteHod = async (c: Context) => {
     const { email } = await c.req.json();
     const auth = c.get("auth");
 
-    console.log(email);
-    console.log(auth);
-
     const clerkUser = await clerkClient.users.getUser(auth.userId);
     if (!clerkUser) {
       return sendError(c, 404, "User not found");
@@ -87,14 +85,23 @@ const onboardUser = async (c: Context) => {
   try {
     const auth = c.get("auth");
 
-    const clerkUser = await clerkClient.users.getUser(auth.userId);
-    if (!clerkUser) {
+    const user = await User.findOne({ _id: auth._id });
+    if (!user) {
       return sendError(c, 404, "User not found");
     }
 
-    const role = clerkUser.publicMetadata.role;
+    const department = await Department.findOne({ _id: user.department });
+    if (!department) {
+      return sendError(c, 404, "Department not found");
+    }
 
-    return sendSuccess(c, 201, "User onboarded successfully", role);
+    const role = user.role;
+    const isOnboarded = department.isOnboarded;
+
+    return sendSuccess(c, 201, "User onboarded successfully", {
+      role,
+      isOnboarded,
+    });
   } catch {
     return sendError(c, 500, "Internal Server Error");
   }

@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import Department from "../models/Department.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
+import User from "../models/User.js";
 
 const getDepartments = async (c: Context) => {
   try {
@@ -41,13 +42,27 @@ const createDepartment = async (c: Context) => {
 };
 
 const updateDepartment = async (c: Context) => {
-  const id = c.req.param("id");
-  const { data } = await c.req.json();
+  const { name } = await c.req.json();
+
+  const auth = c.get("auth");
+
+  const user = await User.findById(auth._id);
+  if (!user) {
+    return sendError(c, 404, "User not found");
+  }
+
+  console.log(user.department);
+  console.log(name);
 
   try {
-    const department = await Department.findByIdAndUpdate(id, data, {
-      new: true,
-    });
+    const department = await Department.findById(user.department);
+    if (!department) {
+      return sendError(c, 404, "Department not found");
+    }
+    department.name = name;
+    department.isOnboarded = true;
+    department.inviteStatus = "accepted";
+    await department.save();
     if (!department) {
       return sendError(c, 404, "Department not found");
     }

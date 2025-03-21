@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,18 +18,46 @@ import {
   ChevronRight,
   Clock,
   CheckCircle2,
+  Calendar,
+  User,
+  AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import Conflict from "@/types/Conflict";
-import Project from "@/types/Project";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import ax from "@/config/axios";
 
+// Define proper TypeScript interfaces
+interface Schedule {
+  start: string;
+  end: string;
+  isRescheduled?: boolean;
+}
+
+interface Project {
+  _id: string;
+  name: string;
+  department?: string;
+  manager?: string;
+  schedule?: Schedule;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Conflict {
+  _id: string;
+  project: string;
+  conflictingProject: string;
+  status: "pending" | "resolved" | "reviewing";
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ProjectsDashboard: React.FC = () => {
   // State for search and filters
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -36,24 +65,28 @@ const ProjectsDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    axios
-      .get("/projects/department/" + user.publicMetadata.department)
-      .then((res) => {
-        setProjects(res.data.data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    setIsLoading(true);
 
-    axios
-      .get("/conflicts/department/" + user.publicMetadata.department)
-      .then((res) => {
-        setConflicts(res.data.data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [user]);
+    const fetchData = async () => {
+      try {
+        const department = user.publicMetadata.department as string;
+
+        const [projectsRes, conflictsRes] = await Promise.all([
+          axios.get(`/projects/department/${department}`),
+          axios.get(`/conflicts/department/${department}`),
+        ]);
+
+        setProjects(projectsRes.data.data);
+        setConflicts(conflictsRes.data.data);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user, axios]);
 
   // Filter conflicts based on search query
   const filteredConflicts = conflicts.filter(
@@ -64,19 +97,27 @@ const ProjectsDashboard: React.FC = () => {
         .includes(searchQuery.toLowerCase())
   );
 
+  // Filter projects based on search query
+  const filteredProjects = projects.filter(
+    (project) =>
+      project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.manager?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.department?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Status badge styling helper function
-  const getStatusBadgeStyles = (status: string) => {
+  const getStatusBadgeStyles = (status: string): string => {
     switch (status) {
       case "resolved":
-        return "bg-green-100 text-green-600 border-green-200";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
       case "pending":
-        return "bg-red-100 text-red-600 border-red-200";
+        return "bg-amber-50 text-amber-700 border-amber-200";
       default:
-        return "bg-gray-100 text-gray-600 border-gray-200";
+        return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactNode => {
     switch (status) {
       case "resolved":
         return <CheckCircle2 className="h-3 w-3 mr-1" />;
@@ -87,285 +128,384 @@ const ProjectsDashboard: React.FC = () => {
     }
   };
 
+  // Format date helper
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Truncate ID for better display
+  const truncateId = (id: string): string => {
+    if (!id) return "N/A";
+
+    return id.length > 10
+      ? `${id.substring(0, 5)}...${id.substring(id.length - 5)}`
+      : id;
+  };
+
   return (
-    <div className="w-full mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="w-full mx-auto p-6 space-y-4 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-slate-800">
             Projects Dashboard
           </h1>
-          <p className="text-gray-500 mt-1">
-            Manage all your municipal projects and conflicts
+          <p className="text-slate-500 mt-1">
+            Overview of municipal projects and resource conflicts
           </p>
         </div>
-        <Button className="bg-blue-900 hover:bg-blue-800">
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Project
-        </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex flex-col sm:flex-row gap-4 items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
         <div className="relative w-full sm:w-96">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search projects or conflicts..."
-            className="pl-8 bg-white"
+            className="pl-9 bg-white border-slate-300 focus:border-indigo-400 focus:ring-indigo-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" className="text-gray-500">
-            <Filter className="mr-1 h-4 w-4" />
+        <div className="flex items-center gap-3 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-slate-600 border-slate-300"
+          >
+            <Filter className="mr-1.5 h-4 w-4" />
             Filters
           </Button>
-          <Button variant="outline" size="sm" className="text-gray-500">
-            <RefreshCw className="mr-1 h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-slate-600 border-slate-300"
+            onClick={() => {
+              setIsLoading(true);
+              setTimeout(() => setIsLoading(false), 500);
+            }}
+          >
+            <RefreshCw
+              className={`mr-1.5 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
       </div>
 
-      <Card className="border-2 border-blue-200 shadow-sm">
-        <CardHeader className="bg-blue-50 py-3 px-4">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-blue-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-blue-500 mr-2"></span>
-              Department Projects
-            </CardTitle>
-          </div>
-        </CardHeader>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <RefreshCw className="animate-spin h-8 w-8 text-indigo-600" />
+        </div>
+      ) : (
+        <>
+          <Card className="border border-slate-200 shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 py-4 px-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-indigo-700 text-xl font-semibold">
+                    Department Projects
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 mt-1">
+                    Currently showing {filteredProjects.length} projects
+                  </CardDescription>
+                </div>
+                <Badge className="bg-indigo-100 text-indigo-700 border-none px-3 py-1">
+                  {projects.length} Total
+                </Badge>
+              </div>
+            </CardHeader>
 
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Project ID
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Project Name
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Department
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Manager
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Schedule
-                  </th>
-                  <th className="text-sm font-medium text-center p-3 text-gray-600">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.length > 0 ? (
-                  projects.map((project) => (
-                    <tr key={project._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">
-                        <Link
-                          to={`/hod/projects/${project._id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {project._id}
-                        </Link>
-                      </td>
-                      <td className="p-3">{project.name}</td>
-                      <td className="p-3">
-                        {project.department && (
-                          <Badge
-                            variant="outline"
-                            className="bg-gray-50 font-normal"
-                          >
-                            {project.department}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="p-3">{project.manager}</td>
-                      <td className="p-3 text-gray-500 text-sm">
-                        {project.schedule?.start.toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        {" - "}
-                        {project.schedule?.end.toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        {project.schedule?.isRescheduled && (
-                          <Badge className="ml-2 bg-yellow-100 text-yellow-700 border-yellow-200">
-                            Rescheduled
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Link
-                          to={`/hod/projects/${project._id}`}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronRight className="h-5 w-5" />
-                          </Button>
-                        </Link>
-                      </td>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-slate-50">
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Project ID
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Project Name
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Department
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Manager
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Schedule
+                      </th>
+                      <th className="text-sm font-medium text-center px-6 py-3 text-slate-600">
+                        Details
+                      </th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      No projects match your search criteria
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
+                  </thead>
+                  <tbody>
+                    {filteredProjects.length > 0 ? (
+                      filteredProjects.map((project) => (
+                        <tr
+                          key={project._id}
+                          className="border-b hover:bg-slate-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium">
+                            <Link
+                              to={`/hod/projects/${project._id}`}
+                              className="text-indigo-600 hover:text-indigo-800 transition-colors flex items-center"
+                            >
+                              <span className="bg-indigo-50 px-2 py-1 rounded text-xs font-mono">
+                                {truncateId(project._id)}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-slate-900">
+                            {project.name}
+                          </td>
+                          <td className="px-6 py-4">
+                            {project.department && (
+                              <Badge
+                                variant="outline"
+                                className="bg-slate-50 text-slate-700 border-slate-200"
+                              >
+                                {project.department}
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-slate-700">
+                            <div className="flex items-center">
+                              <User className="h-3.5 w-3.5 text-slate-400 mr-1.5" />
+                              {project.manager || "Unassigned"}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 text-sm">
+                            <div className="flex items-center">
+                              <Calendar className="h-3.5 w-3.5 text-slate-400 mr-1.5" />
+                              <span>
+                                {project.schedule ? (
+                                  <>
+                                    {formatDate(project.schedule.start)} -{" "}
+                                    {formatDate(project.schedule.end)}
+                                  </>
+                                ) : (
+                                  "Not scheduled"
+                                )}
+                              </span>
+                              {project.schedule?.isRescheduled && (
+                                <Badge className="ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                                  Rescheduled
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <Link
+                              to={`/hod/projects/${project._id}`}
+                              className="text-indigo-600 hover:text-indigo-800"
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 rounded-full hover:bg-indigo-50"
+                              >
+                                <ChevronRight className="h-5 w-5" />
+                              </Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-6 py-12 text-center text-slate-500"
+                        >
+                          <div className="flex flex-col items-center">
+                            <Search className="h-10 w-10 text-slate-300 mb-3" />
+                            <p>No projects match your search criteria</p>
+                            {searchQuery && (
+                              <Button
+                                variant="link"
+                                className="mt-2 text-indigo-600"
+                                onClick={() => setSearchQuery("")}
+                              >
+                                Clear search
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
 
-        <CardFooter className="flex justify-between items-center p-2 bg-gray-50 text-sm text-gray-500">
-          <div>
-            Showing {projects.length} of {projects.length} projects
-          </div>
-          <Button variant="outline" size="sm" className="text-xs">
-            View All Projects
-          </Button>
-        </CardFooter>
-      </Card>
+            <CardFooter className="flex justify-between items-center py-3 px-6 bg-slate-50 text-sm text-slate-500 border-t border-slate-200">
+              <div>
+                Showing {filteredProjects.length} of {projects.length} projects
+              </div>
+              <Link
+                to="/hod/projects"
+                className="text-xs px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100 text-slate-700 transition-colors"
+              >
+                Show All Projects
+              </Link>
+            </CardFooter>
+          </Card>
 
-      <Card className="border-2 border-red-200 shadow-sm">
-        <CardHeader className="bg-red-50 py-3 px-4">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-red-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-red-500 mr-2"></span>
-              Project Conflicts
-            </CardTitle>
-            <Badge
-              variant="outline"
-              className="bg-red-100 text-red-700 border-red-200"
-            >
-              {conflicts.filter((c) => c.status === "pending").length} Pending
-            </Badge>
-          </div>
-        </CardHeader>
+          <Card className="border border-slate-200 shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-rose-50 to-amber-50 py-4 px-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-rose-700 text-xl font-semibold flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Project Conflicts
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 mt-1">
+                    Resource, schedule and location conflicts between projects
+                  </CardDescription>
+                </div>
+                <Badge className="bg-rose-100 text-rose-700 border-none px-3 py-1">
+                  {conflicts.filter((c) => c.status === "pending").length}{" "}
+                  Pending Resolution
+                </Badge>
+              </div>
+            </CardHeader>
 
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Project
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Conflicting Project
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Status
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Created On
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Last Updated
-                  </th>
-                  <th className="text-sm font-medium text-center p-3 text-gray-600">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredConflicts.length > 0 ? (
-                  filteredConflicts.map((conflict, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">
-                        <Link
-                          to={`/hod/projects/${conflict.project}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {conflict.project}
-                        </Link>
-                      </td>
-                      <td className="p-3">
-                        <Link
-                          to={`/hod/projects/${conflict.conflictingProject}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {conflict.conflictingProject}
-                        </Link>
-                      </td>
-                      <td className="p-3">
-                        <Badge
-                          variant="outline"
-                          className={`${getStatusBadgeStyles(
-                            conflict.status
-                          )} flex items-center`}
-                        >
-                          {getStatusIcon(conflict.status)}
-                          {conflict.status.charAt(0).toUpperCase() +
-                            conflict.status.slice(1)}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-gray-500 text-sm">
-                        {conflict.createdAt.toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </td>
-                      <td className="p-3 text-gray-500 text-sm">
-                        {conflict.updatedAt.toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Link
-                          to={`/hod/conflicts/${index}`}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronRight className="h-5 w-5" />
-                          </Button>
-                        </Link>
-                      </td>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-slate-50">
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Project
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Conflicting Project
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Status
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Created On
+                      </th>
+                      <th className="text-sm font-medium text-left px-6 py-3 text-slate-600">
+                        Last Updated
+                      </th>
+                      <th className="text-sm font-medium text-center px-6 py-3 text-slate-600">
+                        Details
+                      </th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      No conflicts match your search criteria
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
+                  </thead>
+                  <tbody>
+                    {filteredConflicts.length > 0 ? (
+                      filteredConflicts.map((conflict) => (
+                        <tr
+                          key={conflict._id}
+                          className="border-b hover:bg-slate-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium">
+                            <Link
+                              to={`/hod/projects/${conflict.project}`}
+                              className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                            >
+                              <span className="bg-indigo-50 px-2 py-1 rounded text-xs font-mono">
+                                {truncateId(conflict.project)}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 font-medium">
+                            <Link
+                              to={`/hod/projects/${conflict.conflictingProject}`}
+                              className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                            >
+                              <span className="bg-indigo-50 px-2 py-1 rounded text-xs font-mono">
+                                {truncateId(conflict.conflictingProject)}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge
+                              variant="outline"
+                              className={`${getStatusBadgeStyles(
+                                conflict.status
+                              )} flex items-center`}
+                            >
+                              {getStatusIcon(conflict.status)}
+                              {conflict.status.charAt(0).toUpperCase() +
+                                conflict.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 text-sm">
+                            {formatDate(conflict.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 text-sm">
+                            {formatDate(conflict.updatedAt)}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <Link
+                              to={`/hod/conflicts/${conflict._id}`}
+                              className="text-indigo-600 hover:text-indigo-800"
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 rounded-full hover:bg-indigo-50"
+                              >
+                                <ChevronRight className="h-5 w-5" />
+                              </Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-6 py-12 text-center text-slate-500"
+                        >
+                          <div className="flex flex-col items-center">
+                            <Search className="h-10 w-10 text-slate-300 mb-3" />
+                            <p>No conflicts match your search criteria</p>
+                            {searchQuery && (
+                              <Button
+                                variant="link"
+                                className="mt-2 text-indigo-600"
+                                onClick={() => setSearchQuery("")}
+                              >
+                                Clear search
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
 
-        <CardFooter className="flex justify-between items-center p-2 bg-gray-50 text-sm text-gray-500">
-          <div>
-            Showing {filteredConflicts.length} of {conflicts.length} conflicts
-          </div>
-          <Button variant="outline" size="sm" className="text-xs">
-            View All Conflicts
-          </Button>
-        </CardFooter>
-      </Card>
+            <CardFooter className="flex justify-between items-center py-3 px-6 bg-slate-50 text-sm text-slate-500 border-t border-slate-200">
+              <div>
+                Showing {filteredConflicts.length} of {conflicts.length}{" "}
+                conflicts
+              </div>
+              <Link
+                to="/hod/conflicts"
+                className="text-xs px-3 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100 text-slate-700 transition-colors"
+              >
+                Show All Conflicts
+              </Link>
+            </CardFooter>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

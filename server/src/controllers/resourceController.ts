@@ -2,10 +2,11 @@ import type { Context } from "hono";
 import Resource from "../models/Resource.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
+import clerkClient from "../config/clerk.js";
 
 const getResources = async (c: Context) => {
   try {
-    const resources = await Resource.find().populate("sharedWith").lean();
+    const resources = await Resource.find().populate("department").lean();
     return sendSuccess(c, 200, "Resources fetched successfully", resources);
   } catch (error) {
     logger.error(error as string);
@@ -14,18 +15,15 @@ const getResources = async (c: Context) => {
 };
 
 const createResource = async (c: Context) => {
-  const { data } = await c.req.json();
+  const data = await c.req.json();
   const auth = c.get("auth");
 
+  console.log(data);
+
   try {
-    const resource = await Resource.create(data);
-    if (auth.departmentId !== resource.department?.toString()) {
-      return sendError(
-        c,
-        403,
-        "You are not authorized to create this resource"
-      );
-    }
+    const user = clerkClient.users.getUser(auth.userId);
+    const department = (await user).publicMetadata.department;
+    const resource = await Resource.create({ ...data, department: department });
     return sendSuccess(c, 200, "Resource created successfully", resource);
   } catch (error) {
     logger.error(error as string);
@@ -97,10 +95,45 @@ const deleteResource = async (c: Context) => {
   }
 };
 
+const getMyResources = async (c: Context) => {
+  const auth = c.get("auth");
+  const user = clerkClient.users.getUser(auth.userId);
+  const department = (await user).publicMetadata.department;
+
+  try {
+    const resources = await Resource.find({
+      department: department,
+    }).lean();
+    return sendSuccess(c, 200, "Resources fetched successfully", resources);
+  } catch (error) {
+    logger.error(error as string);
+    return sendError(c, 500, "Failed to fetch resources");
+  }
+};
+
+const getMarketplaceResources = async (c: Context) => {
+  // get all resources that are not in the user's department
+  const auth = c.get("auth");
+  const user = clerkClient.users.getUser(auth.userId);
+  const department = (await user).publicMetadata.department;
+
+  try {
+    const resources = await Resource.find({
+      department: { $ne: department },
+    }).lean();
+    return sendSuccess(c, 200, "Resources fetched successfully", resources);
+  } catch (error) {
+    logger.error(error as string);
+    return sendError(c, 500, "Failed to fetch resources");
+  }
+};
+
 export default {
   getResources,
   createResource,
   getResource,
   updateResource,
   deleteResource,
+  getMyResources,
+  getMarketplaceResources,
 };

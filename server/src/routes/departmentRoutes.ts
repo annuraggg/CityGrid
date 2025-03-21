@@ -4,7 +4,7 @@ const app = new Hono();
 
 app.post("/", departmentController.createDepartment);
 app.get("/:id", departmentController.getDepartment);
-app.put("/:id", departmentController.updateDepartment);
+app.put("/", departmentController.updateDepartment);
 app.post("/:id/member", departmentController.addMember);
 app.delete("/:id/member", departmentController.removeMember);
 

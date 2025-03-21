@@ -22,6 +22,7 @@ import notificationRoutes from "../routes/notificationRoutes.js";
 import projectRoutes from "../routes/projectRoutes.js";
 import resourceRoutes from "../routes/resourceRoutes.js";
 import inviteRoutes from "../routes/inviteRoutes.js";
+import resourceShareRoutes from "../routes/resourceShareRoutes.js";
 
 const app = new Hono();
 serve({
@@ -43,5 +44,6 @@ app.route("/notifications", notificationRoutes);
 app.route("/projects", projectRoutes);
 app.route("/resources", resourceRoutes);
 app.route("/invites", inviteRoutes);
+app.route("/shares", resourceShareRoutes);
 
 export default app;

@@ -11,8 +11,11 @@ const Invite = () => {
     axios
       .get("/invites/onboard-user")
       .then((res) => {
-        if (res.data.data === "hod") window.location.href = "/hod";
-        else if (res.data.data === "project-manager") window.location.href = "/pm";
+        if (res.data.data.role === "hod") {
+          if (res.data.data.isOnboarded) window.location.href = "/hod";
+          else window.location.href = "/onboarding";
+        } else if (res.data.data.role === "project-manager")
+          window.location.href = "/pm";
       })
       .catch(() => {});
   }, []);

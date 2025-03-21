@@ -24,7 +24,6 @@ const HodCreateProject = lazy(
   () => import("./pages/Hod/Project/CreateProject")
 );
 const HodConflict = lazy(() => import("./pages/Hod/Project/Conflict"));
-const HodCreateResource = lazy(() => import("./pages/Hod/Resources/Create"));
 const HodMarket = lazy(() => import("./pages/Hod/Resources/Market"));
 const HodShare = lazy(() => import("./pages/Hod/Resources/Share"));
 
@@ -50,11 +49,22 @@ const ProjectManagerResources = lazy(
 const ProjectCreate = lazy(
   () => import("./pages/ProjectManager/Project/Create")
 );
+const ViewProjectShare = lazy(
+  () => import("./pages/Hod/Resources/ViewProject")
+);
 
 const router = createBrowserRouter([
   {
     path: "/invite",
     element: <Invite />,
+  },
+  {
+    path: "/onboarding",
+    element: (
+      <Suspense fallback={<Loading />}>
+        <HodOnboarding />
+      </Suspense>
+    ),
   },
   {
     path: "/hod",
@@ -93,6 +103,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "resources/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ViewProjectShare />
+          </Suspense>
+        ),
+      },
+      {
         path: "team",
         element: (
           <Suspense fallback={<Loading />}>
@@ -121,14 +139,6 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <HodCreateProject />
-          </Suspense>
-        ),
-      },
-      {
-        path: "create-resource",
-        element: (
-          <Suspense fallback={<Loading />}>
-            <HodCreateResource />
           </Suspense>
         ),
       },
@@ -254,7 +264,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-  }
+  },
 ]);
 
 function App() {
