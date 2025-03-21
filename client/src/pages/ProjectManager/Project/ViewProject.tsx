@@ -19,6 +19,7 @@ import {
   Briefcase,
   PlusCircle,
   ArrowLeftRight,
+  Terminal,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +37,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import Conflict from "@/types/Conflict";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const ViewProject = () => {
   const { getToken } = useAuth();
@@ -49,6 +52,7 @@ const ViewProject = () => {
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [newStartDate, setNewStartDate] = useState<string>("");
   const [newEndDate, setNewEndDate] = useState<string>("");
+  const [aiSUggestion, setAiSuggestion] = useState<string>("");
 
   const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
@@ -66,7 +70,7 @@ const ViewProject = () => {
         setLoading(false);
       });
 
-    axios.get("conflits/department").then((res) => {
+    axios.get("conflicts/department").then((res) => {
       setConflicts(res.data.data);
       setLoading(false);
     });
@@ -78,12 +82,31 @@ const ViewProject = () => {
 
   useEffect(() => {
     if (project?.schedule.start) {
-      setNewStartDate(new Date(project.schedule.start).toISOString().split('T')[0]);
+      setNewStartDate(
+        new Date(project.schedule.start).toISOString().split("T")[0]
+      );
     }
     if (project?.schedule.end) {
-      setNewEndDate(new Date(project.schedule.end).toISOString().split('T')[0]);
+      setNewEndDate(new Date(project.schedule.end).toISOString().split("T")[0]);
     }
   }, [project]);
+
+  useEffect(() => {
+    if (conflicts.some((conflict) => conflict.project === project?._id)) {
+      axios
+        .post("projects/llm", {
+          conflictId: conflicts[0]._id,
+        })
+        .then((res) => {
+          toast.success("Conflict detected. " + res.data.message);
+          setAiSuggestion(res.data.data);
+        })
+        .catch((err) => {
+          console.error("Error fetching LLM response:", err);
+          toast.error("Failed to fetch LLM response");
+        });
+    }
+  }, [conflicts, project]);
 
   const handleReschedule = async () => {
     if (!newStartDate || !newEndDate) {
@@ -93,19 +116,22 @@ const ViewProject = () => {
 
     const pid = window.location.pathname.split("/").pop();
 
-    try {
-      await axios.put(`projects/${pid}/reschedule`, {
+    axios
+      .put(`projects/${pid}/reschedule`, {
         start: newStartDate,
-        end: newEndDate
+        end: newEndDate,
+      })
+      .then((res) => {
+        toast.success("Project rescheduled successfully");
+        fetchProject(); // Refresh project data
+        setIsRescheduleModalOpen(false);
+      })
+      .catch((err) => {
+        console.error("Error rescheduling project:", err);
+        toast.error(
+          err.response?.data?.message || "Failed to reschedule project"
+        );
       });
-
-      toast.success("Project rescheduled successfully");
-      fetchProject(); // Refresh project data
-      setIsRescheduleModalOpen(false);
-    } catch (err) {
-      console.error("Error rescheduling project:", err);
-      toast.error("Failed to reschedule project");
-    }
   };
 
   const uploadDoc = () => {
@@ -181,6 +207,9 @@ const ViewProject = () => {
   const endDate = project.schedule.end
     ? format(new Date(project.schedule.end), "MMMM dd, yyyy")
     : "Not set";
+  const isConflict = conflicts.some(
+    (conflict) => conflict.project === project._id
+  );
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -194,7 +223,10 @@ const ViewProject = () => {
       />
 
       {/* Reschedule Modal */}
-      <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
+      <Dialog
+        open={isRescheduleModalOpen}
+        onOpenChange={setIsRescheduleModalOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Reschedule Project</DialogTitle>
@@ -229,13 +261,38 @@ const ViewProject = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRescheduleModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsRescheduleModalOpen(false)}
+            >
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-sm font-medium" onClick={handleReschedule}>Save Changes</Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-sm font-medium"
+              onClick={handleReschedule}
+            >
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {isConflict && (
+        <Alert variant={"destructive"} className="mb-4">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Conflict Detected</AlertTitle>
+          <AlertDescription>
+            You can reschedule the project to avoid conflicts with other
+            projects. Schedule of conflicting project:
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {aiSUggestion && (
+        <div className="border-green-500 border p-5 my-2 rounded-2xl bg-green-100">
+          <p>Suggestion: {aiSUggestion}</p>
+        </div>
+      )}
 
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -286,7 +343,6 @@ const ViewProject = () => {
                   <div>
                     <h3 className="text-lg font-medium mb-2 flex justify-between items-center">
                       <span>Schedule</span>
-
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
