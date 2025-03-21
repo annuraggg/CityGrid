@@ -8,7 +8,9 @@ const Layout = () => {
       <SignedIn>
         <div className="flex gap-5">
           <PmSidebar />
-          <Outlet />
+          <div className="h-screen w-full overflow-y-auto">
+            <Outlet />
+          </div>
         </div>
       </SignedIn>
       <SignedOut>

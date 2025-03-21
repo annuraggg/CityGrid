@@ -2,6 +2,67 @@ import type { Context } from "hono";
 import Conflict from "../models/Conflict.js";
 import { sendError, sendSuccess } from "../utils/sendResponse.js";
 import logger from "../utils/logger.js";
+import Project from "../models/Project.js";
+
+const checkConflicts = async (c: Context) => {
+  try {
+    const { schedule, location } = await c.req.json();
+    const { longitude, latitude } = location;
+    const { start, end } = schedule;
+
+    console.log("Check conflicts:", { start, end, longitude, latitude });
+    const locationThreshold = 0.001;
+
+    const conflictingProjects = await Project.find({
+      $and: [
+        {
+          $or: [
+            {
+              $and: [
+                { "schedule.start": { $lte: new Date(start) } },
+                { "schedule.end": { $gte: new Date(start) } },
+              ],
+            },
+            {
+              $and: [
+                { "schedule.start": { $lte: new Date(end) } },
+                { "schedule.end": { $gte: new Date(end) } },
+              ],
+            },
+            {
+              $and: [
+                { "schedule.start": { $gte: new Date(start) } },
+                { "schedule.end": { $lte: new Date(end) } },
+              ],
+            },
+          ],
+        },
+        {
+          $and: [
+            { "location.longitude": { $gte: longitude - locationThreshold } },
+            { "location.longitude": { $lte: longitude + locationThreshold } },
+            { "location.latitude": { $gte: latitude - locationThreshold } },
+            { "location.latitude": { $lte: latitude + locationThreshold } },
+          ],
+        },
+      ],
+    });
+
+    if (conflictingProjects.length) {
+      return sendError(
+        c,
+        409,
+        "Conflicts found for date and location",
+        conflictingProjects
+      );
+    }
+
+    return sendSuccess(c, 200, "No conflicts", []);
+  } catch (error) {
+    console.error("Error checking conflicts:", error);
+    return sendError(c, 500, "Failed to check conflicts");
+  }
+};
 
 const getConflicts = async (c: Context) => {
   try {
@@ -94,4 +155,5 @@ export default {
   getConflict,
   updateConflict,
   deleteConflict,
+  checkConflicts,
 };

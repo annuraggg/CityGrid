@@ -30,12 +30,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import Conflict from "@/types/Conflict";
 
 const Project = () => {
   const [loading, setLoading] = useState(true);
   const { getToken } = useAuth();
   const axios = ax(getToken);
   const [projects, setProjects] = useState<IProject[]>([]);
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [viewType, setViewType] = useState("grid"); // grid or list
   const navigate = useNavigate();
 
@@ -46,6 +48,8 @@ const Project = () => {
   const fetchProjects = async () => {
     try {
       const res = await axios.get("/projects/manager");
+      const conflictsRes = await axios.get("/conflicts/department");
+      setConflicts(conflictsRes.data.data);
       setProjects(res.data.data);
       setLoading(false);
     } catch (error: any) {

@@ -41,6 +41,7 @@ const ViewProject = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
   const [project, setProject] = useState<ExtendedProject>();
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +65,11 @@ const ViewProject = () => {
         setError("Failed to load project details");
         setLoading(false);
       });
+
+    axios.get("conflits/department").then((res) => {
+      setConflicts(res.data.data);
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
