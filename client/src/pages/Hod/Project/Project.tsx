@@ -1,3 +1,5 @@
+// merge conflict
+
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -14,7 +16,9 @@ import {
   CheckCircle,
   Clock,
   Building,
-  FileDown
+  FileDown,
+  ArrowLeft,
+  ArrowRight
 } from "lucide-react";
 import { Link } from 'react-router-dom';
 
@@ -107,7 +111,7 @@ const SearchAndFilters: React.FC<{
         onChange={(e) => onSearchChange(e.target.value)}
       />
     </div>
-    
+
     <div className="flex items-center gap-2 ml-auto">
       <Button variant="outline" size="sm" className="text-slate-600">
         <SlidersHorizontal className="mr-1 h-4 w-4" />
@@ -126,14 +130,14 @@ const SearchAndFilters: React.FC<{
 );
 
 // Reusable DataTable column header
-const TableHeader: React.FC<{label: string}> = ({ label }) => (
+const TableHeader: React.FC<{ label: string }> = ({ label }) => (
   <th className="text-sm font-medium text-left p-3 text-slate-600">
     {label}
   </th>
 );
 
 // Table row for "no results found"
-const EmptyTableRow: React.FC<{colSpan: number, message: string}> = ({ colSpan, message }) => (
+const EmptyTableRow: React.FC<{ colSpan: number, message: string }> = ({ colSpan, message }) => (
   <tr>
     <td colSpan={colSpan} className="p-8 text-center text-slate-500">
       {message}
@@ -142,9 +146,9 @@ const EmptyTableRow: React.FC<{colSpan: number, message: string}> = ({ colSpan, 
 );
 
 // Badge component with consistent styling
-const StatusBadge: React.FC<{status: string}> = ({ status }) => (
-  <Badge 
-    variant="outline" 
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
+  <Badge
+    variant="outline"
     className={`${STATUS_STYLES[status as keyof typeof STATUS_STYLES]} flex items-center`}
   >
     {STATUS_ICONS[status as keyof typeof STATUS_ICONS]}
@@ -152,16 +156,16 @@ const StatusBadge: React.FC<{status: string}> = ({ status }) => (
   </Badge>
 );
 
-const PriorityBadge: React.FC<{priority: string}> = ({ priority }) => {
-  const iconColor = priority === "High" || priority === "Critical" 
-    ? "text-rose-500" 
-    : priority === "Medium" || priority === "Major" 
-      ? "text-amber-500" 
+const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => {
+  const iconColor = priority === "High" || priority === "Critical"
+    ? "text-rose-500"
+    : priority === "Medium" || priority === "Major"
+      ? "text-amber-500"
       : "text-emerald-500";
-  
+
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`${PRIORITY_STYLES[priority as keyof typeof PRIORITY_STYLES]}`}
     >
       <span className={`mr-1 h-2 w-2 rounded-full ${iconColor} bg-current`}></span>
@@ -241,24 +245,24 @@ const ProjectsDashboard: React.FC = () => {
   // Memoize filtered data to prevent unnecessary recalculations
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
-      const matchesSearch = 
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch =
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.department.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesTab = 
-        activeTab === "all" || 
+
+      const matchesTab =
+        activeTab === "all" ||
         (activeTab === "inProgress" && project.status === "In Progress") ||
         (activeTab === "completed" && project.status === "Completed") ||
         (activeTab === "planned" && project.status === "Planned");
-      
+
       return matchesSearch && matchesTab;
     });
   }, [projects, searchQuery, activeTab]);
 
   const filteredConflicts = useMemo(() => {
-    return conflicts.filter(conflict => 
-      conflict.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    return conflicts.filter(conflict =>
+      conflict.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conflict.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conflict.departmentsAffected.some(dept => dept.toLowerCase().includes(searchQuery.toLowerCase()))
     );
@@ -285,14 +289,14 @@ const ProjectsDashboard: React.FC = () => {
 
   return (
     <div className="w-full mx-auto px-4 py-6 space-y-6 max-w-7xl">
-      <DashboardHeader 
+      <DashboardHeader
         title="Projects Management"
         subtitle="Monitor and coordinate municipal projects and resolve interdepartmental conflicts"
         actionLabel="New Project"
         onAction={handleCreateProject}
       />
 
-      <SearchAndFilters 
+      <SearchAndFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onRefresh={handleRefresh}
@@ -372,11 +376,21 @@ const ProjectsDashboard: React.FC = () => {
             </table>
           </div>
         </CardContent>
-        
+
         <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
-          <div>Displaying {filteredProjects.length} of {projects.length} projects</div>
-          <Button variant="outline" size="sm" className="text-slate-600">View All Projects</Button>
+          <div>Displaying  {filteredProjects.length} of {projects.length} projects</div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled className="text-slate-600 border-slate-200">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
+              Next
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </CardFooter>
+
       </Card>
 
       {/* Conflicts Card */}
@@ -392,7 +406,7 @@ const ProjectsDashboard: React.FC = () => {
             </Badge>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -451,11 +465,21 @@ const ProjectsDashboard: React.FC = () => {
             </table>
           </div>
         </CardContent>
-        
+
         <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
-          <div>Displaying {filteredConflicts.length} of {conflicts.length} conflicts</div>
-          <Button variant="outline" size="sm" className="text-slate-600">View All Conflicts</Button>
+          <div>Displaying  {filteredConflicts.length} of {conflicts.length} conflicts</div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled className="text-slate-600 border-slate-200">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 hover:bg-slate-50">
+              Next
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </CardFooter>
+
       </Card>
     </div>
   );
