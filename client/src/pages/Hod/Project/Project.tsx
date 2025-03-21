@@ -1,47 +1,181 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  RefreshCw, 
+import {
+  Plus,
+  Search,
+  SlidersHorizontal,
+  RotateCw,
   ChevronRight,
   AlertTriangle,
-  CheckCircle2,
+  CheckCircle,
   Clock,
-  Building
+  Building,
+  FileDown
 } from "lucide-react";
 import { Link } from 'react-router-dom';
 
-// Enhanced type definitions with more properties
-type Project = {
+// Types defined with consistent naming conventions
+type ProjectStatus = "In Progress" | "Completed" | "Planned";
+type ProjectPriority = "High" | "Medium" | "Low";
+type ConflictStatus = "Unresolved" | "Resolved" | "Under Review";
+type ConflictSeverity = "Critical" | "Major" | "Minor";
+
+interface Project {
   id: string;
   name: string;
   department: string;
-  status: "In Progress" | "Completed" | "Planned";
-  priority: "High" | "Medium" | "Low";
+  status: ProjectStatus;
+  priority: ProjectPriority;
   updatedAt: string;
-};
+}
 
-type Conflict = {
+interface Conflict {
   id: string;
   name: string;
   departmentsAffected: string[];
-  status: "Unresolved" | "Resolved" | "Under Review";
-  severity: "Critical" | "Major" | "Minor";
+  status: ConflictStatus;
+  severity: ConflictSeverity;
   createdAt: string;
+}
+
+// Status badge styling - using shadcn color system
+const STATUS_STYLES = {
+  Completed: "bg-slate-100 text-slate-800 border-slate-200",
+  Resolved: "bg-slate-100 text-slate-800 border-slate-200",
+  "In Progress": "bg-slate-100 text-slate-800 border-slate-200",
+  "Under Review": "bg-slate-100 text-slate-800 border-slate-200",
+  Planned: "bg-slate-100 text-slate-800 border-slate-200",
+  Unresolved: "bg-slate-100 text-slate-800 border-slate-200"
 };
 
+// Priority badge styling - using shadcn color system
+const PRIORITY_STYLES = {
+  High: "bg-slate-100 text-slate-800 border-slate-200",
+  Critical: "bg-slate-100 text-slate-800 border-slate-200",
+  Medium: "bg-slate-100 text-slate-800 border-slate-200",
+  Major: "bg-slate-100 text-slate-800 border-slate-200",
+  Low: "bg-slate-100 text-slate-800 border-slate-200",
+  Minor: "bg-slate-100 text-slate-800 border-slate-200"
+};
+
+// Status icons with consistent styling
+const STATUS_ICONS = {
+  Completed: <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />,
+  Resolved: <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />,
+  "In Progress": <Clock className="h-3 w-3 mr-1 text-amber-500" />,
+  "Under Review": <Clock className="h-3 w-3 mr-1 text-amber-500" />,
+  Planned: <Building className="h-3 w-3 mr-1 text-sky-500" />,
+  Unresolved: <AlertTriangle className="h-3 w-3 mr-1 text-rose-500" />
+};
+
+// Component for page header with consistent styling
+const DashboardHeader: React.FC<{
+  title: string;
+  subtitle: string;
+  actionLabel: string;
+  onAction: () => void;
+}> = ({ title, subtitle, actionLabel, onAction }) => (
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+      <p className="text-slate-500 mt-1">{subtitle}</p>
+    </div>
+    <Button onClick={onAction}>
+      <Plus className="mr-2 h-4 w-4" />
+      {actionLabel}
+    </Button>
+  </div>
+);
+
+// Search and filter component
+const SearchAndFilters: React.FC<{
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  onRefresh: () => void;
+}> = ({ searchQuery, onSearchChange, onRefresh }) => (
+  <div className="flex flex-col sm:flex-row gap-4 items-center mb-6">
+    <div className="relative w-full sm:w-96">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+      <Input
+        placeholder="Search by name, ID, or department..."
+        className="pl-8 bg-white"
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+      />
+    </div>
+    
+    <div className="flex items-center gap-2 ml-auto">
+      <Button variant="outline" size="sm" className="text-slate-600">
+        <SlidersHorizontal className="mr-1 h-4 w-4" />
+        Filter
+      </Button>
+      <Button variant="outline" size="sm" className="text-slate-600" onClick={onRefresh}>
+        <RotateCw className="mr-1 h-4 w-4" />
+        Refresh
+      </Button>
+      <Button variant="outline" size="sm" className="text-slate-600">
+        <FileDown className="mr-1 h-4 w-4" />
+        Export
+      </Button>
+    </div>
+  </div>
+);
+
+// Reusable DataTable column header
+const TableHeader: React.FC<{label: string}> = ({ label }) => (
+  <th className="text-sm font-medium text-left p-3 text-slate-600">
+    {label}
+  </th>
+);
+
+// Table row for "no results found"
+const EmptyTableRow: React.FC<{colSpan: number, message: string}> = ({ colSpan, message }) => (
+  <tr>
+    <td colSpan={colSpan} className="p-8 text-center text-slate-500">
+      {message}
+    </td>
+  </tr>
+);
+
+// Badge component with consistent styling
+const StatusBadge: React.FC<{status: string}> = ({ status }) => (
+  <Badge 
+    variant="outline" 
+    className={`${STATUS_STYLES[status as keyof typeof STATUS_STYLES]} flex items-center`}
+  >
+    {STATUS_ICONS[status as keyof typeof STATUS_ICONS]}
+    {status}
+  </Badge>
+);
+
+const PriorityBadge: React.FC<{priority: string}> = ({ priority }) => {
+  const iconColor = priority === "High" || priority === "Critical" 
+    ? "text-rose-500" 
+    : priority === "Medium" || priority === "Major" 
+      ? "text-amber-500" 
+      : "text-emerald-500";
+  
+  return (
+    <Badge 
+      variant="outline" 
+      className={`${PRIORITY_STYLES[priority as keyof typeof PRIORITY_STYLES]}`}
+    >
+      <span className={`mr-1 h-2 w-2 rounded-full ${iconColor} bg-current`}></span>
+      {priority}
+    </Badge>
+  );
+};
+
+// Main component
 const ProjectsDashboard: React.FC = () => {
-  // State for search and filters
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Enhanced mock data
+  // Mock data - would typically come from an API
   const projects: Project[] = [
     {
       id: "PRJ-101",
@@ -104,127 +238,77 @@ const ProjectsDashboard: React.FC = () => {
     },
   ];
 
-  // Filter projects based on search query and active tab
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = 
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.department.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesTab = 
-      activeTab === "all" || 
-      (activeTab === "inProgress" && project.status === "In Progress") ||
-      (activeTab === "completed" && project.status === "Completed") ||
-      (activeTab === "planned" && project.status === "Planned");
-    
-    return matchesSearch && matchesTab;
-  });
+  // Memoize filtered data to prevent unnecessary recalculations
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = 
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.department.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesTab = 
+        activeTab === "all" || 
+        (activeTab === "inProgress" && project.status === "In Progress") ||
+        (activeTab === "completed" && project.status === "Completed") ||
+        (activeTab === "planned" && project.status === "Planned");
+      
+      return matchesSearch && matchesTab;
+    });
+  }, [projects, searchQuery, activeTab]);
 
-  // Filter conflicts based on search query
-  const filteredConflicts = conflicts.filter(conflict => 
-    conflict.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    conflict.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conflict.departmentsAffected.some(dept => dept.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredConflicts = useMemo(() => {
+    return conflicts.filter(conflict => 
+      conflict.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      conflict.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conflict.departmentsAffected.some(dept => dept.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [conflicts, searchQuery]);
 
-  // Status badge styling helper function
-  const getStatusBadgeStyles = (status: string) => {
-    switch(status) {
-      case "Completed":
-      case "Resolved":
-        return "bg-green-100 text-green-600 border-green-200";
-      case "In Progress":
-      case "Under Review":
-        return "bg-blue-100 text-blue-600 border-blue-200";
-      case "Planned":
-        return "bg-purple-100 text-purple-600 border-purple-200";
-      case "Unresolved":
-        return "bg-red-100 text-red-600 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-600 border-gray-200";
-    }
+  // Handler functions
+  const handleRefresh = () => {
+    // This would typically fetch fresh data from the API
+    console.log("Refreshing data...");
   };
 
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case "Completed":
-      case "Resolved":
-        return <CheckCircle2 className="h-3 w-3 mr-1" />;
-      case "In Progress":
-      case "Under Review":
-        return <Clock className="h-3 w-3 mr-1" />;
-      case "Planned":
-        return <Building className="h-3 w-3 mr-1" />;
-      case "Unresolved":
-        return <AlertTriangle className="h-3 w-3 mr-1" />;
-      default:
-        return null;
-    }
+  const handleCreateProject = () => {
+    // Navigate to create project page or open modal
+    console.log("Creating new project...");
   };
 
-  // Priority badge styling helper function
-  const getPriorityBadgeStyles = (priority: string) => {
-    switch(priority) {
-      case "High":
-      case "Critical":
-        return "bg-red-50 text-red-600 border-red-200";
-      case "Medium":
-      case "Major":
-        return "bg-orange-50 text-orange-600 border-orange-200";
-      case "Low":
-      case "Minor":
-        return "bg-green-50 text-green-600 border-green-200";
-      default:
-        return "bg-gray-50 text-gray-600 border-gray-200";
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
-    <div className="w-full mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Projects Dashboard</h1>
-          <p className="text-gray-500 mt-1">Manage all your municipal projects and conflicts</p>
-        </div>
-        <Button className="bg-blue-900 hover:bg-blue-800">
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Project
-        </Button>
-      </div>
+    <div className="w-full mx-auto px-4 py-6 space-y-6 max-w-7xl">
+      <DashboardHeader 
+        title="Projects Management"
+        subtitle="Monitor and coordinate municipal projects and resolve interdepartmental conflicts"
+        actionLabel="New Project"
+        onAction={handleCreateProject}
+      />
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Search projects or conflicts..."
-            className="pl-8 bg-white"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" className="text-gray-500">
-            <Filter className="mr-1 h-4 w-4" />
-            Filters
-          </Button>
-          <Button variant="outline" size="sm" className="text-gray-500">
-            <RefreshCw className="mr-1 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <SearchAndFilters 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={handleRefresh}
+      />
 
-      <Card className="border-2 border-blue-200 shadow-sm">
-        <CardHeader className="bg-blue-50 py-3 px-4">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-blue-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-blue-500 mr-2"></span>
+      {/* Projects Card */}
+      <Card className="border border-slate-200 shadow-sm overflow-hidden py-0">
+        <CardHeader className="bg-slate-50 py-3 px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="text-slate-700 flex items-center text-lg">
+              <span className="h-3 w-3 rounded-full bg-slate-400 mr-2"></span>
               Department Projects
             </CardTitle>
 
             <Tabs defaultValue="all" className="w-fit" onValueChange={setActiveTab}>
-              <TabsList className="bg-white border border-blue-100">
+              <TabsList className="bg-white border border-slate-200">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="inProgress">In Progress</TabsTrigger>
                 <TabsTrigger value="planned">Planned</TabsTrigger>
@@ -238,66 +322,43 @@ const ProjectsDashboard: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Project ID
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Project Name
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Department
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Priority
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Status
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Last Updated
-                  </th>
-                  <th className="text-sm font-medium text-center p-3 text-gray-600">
-                    Actions
-                  </th>
+                <tr className="border-b bg-slate-50">
+                  <TableHeader label="Project ID" />
+                  <TableHeader label="Project Name" />
+                  <TableHeader label="Department" />
+                  <TableHeader label="Priority" />
+                  <TableHeader label="Status" />
+                  <TableHeader label="Last Updated" />
+                  <TableHeader label="View" />
                 </tr>
               </thead>
               <tbody>
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => (
-                    <tr key={project.id} className="border-b hover:bg-gray-50">
+                    <tr key={project.id} className="border-b hover:bg-slate-50 transition-colors">
                       <td className="p-3 font-medium">
-                        <Link to={`/hod/projects/${project.id}`} className="text-blue-600 hover:underline">
+                        <Link to={`/hod/projects/${project.id}`} className="text-slate-900 hover:text-slate-700">
                           {project.id}
                         </Link>
                       </td>
-                      <td className="p-3">{project.name}</td>
+                      <td className="p-3 font-medium text-slate-900">{project.name}</td>
                       <td className="p-3">
-                        <Badge variant="outline" className="bg-gray-50 font-normal">
+                        <Badge variant="outline" className="bg-slate-50 font-normal text-slate-700">
                           {project.department}
                         </Badge>
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className={`${getPriorityBadgeStyles(project.priority)} font-normal`}>
-                          {project.priority}
-                        </Badge>
+                        <PriorityBadge priority={project.priority} />
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className={`${getStatusBadgeStyles(project.status)} flex items-center`}>
-                          {getStatusIcon(project.status)}
-                          {project.status}
-                        </Badge>
+                        <StatusBadge status={project.status} />
                       </td>
-                      <td className="p-3 text-gray-500 text-sm">
-                        {new Date(project.updatedAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
+                      <td className="p-3 text-slate-500 text-sm">
+                        {formatDate(project.updatedAt)}
                       </td>
                       <td className="p-3 text-center">
-                        <Link to={`/hod/projects/${project.id}`} className="text-blue-600 hover:text-blue-800">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Link to={`/hod/projects/${project.id}`} className="text-slate-500 hover:text-slate-700">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
                             <ChevronRight className="h-5 w-5" />
                           </Button>
                         </Link>
@@ -305,31 +366,28 @@ const ProjectsDashboard: React.FC = () => {
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500">
-                      No projects match your search criteria
-                    </td>
-                  </tr>
+                  <EmptyTableRow colSpan={7} message="No matching projects found" />
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
         
-        <CardFooter className="flex justify-between items-center p-2 bg-gray-50 text-sm text-gray-500">
-          <div>Showing {filteredProjects.length} of {projects.length} projects</div>
-          <Button variant="outline" size="sm" className="text-xs">View All Projects</Button>
+        <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
+          <div>Displaying {filteredProjects.length} of {projects.length} projects</div>
+          <Button variant="outline" size="sm" className="text-slate-600">View All Projects</Button>
         </CardFooter>
       </Card>
 
-      <Card className="border-2 border-red-200 shadow-sm">
-        <CardHeader className="bg-red-50 py-3 px-4">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-red-700 flex items-center text-lg">
-              <span className="h-3 w-3 rounded-full bg-red-500 mr-2"></span>
+      {/* Conflicts Card */}
+      <Card className="border border-slate-200 shadow-sm overflow-hidden py-0">
+        <CardHeader className="bg-slate-50 py-3 px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="text-slate-700 flex items-center text-lg">
+              <span className="h-3 w-3 rounded-full bg-slate-400 mr-2"></span>
               Project Conflicts
             </CardTitle>
-            <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
+            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">
               {conflicts.filter(c => c.status === "Unresolved").length} Unresolved
             </Badge>
           </div>
@@ -339,70 +397,47 @@ const ProjectsDashboard: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Conflict ID
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Conflict Name
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Departments Affected
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Severity
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Status
-                  </th>
-                  <th className="text-sm font-medium text-left p-3 text-gray-600">
-                    Created On
-                  </th>
-                  <th className="text-sm font-medium text-center p-3 text-gray-600">
-                    Actions
-                  </th>
+                <tr className="border-b bg-slate-50">
+                  <TableHeader label="Conflict ID" />
+                  <TableHeader label="Issue Description" />
+                  <TableHeader label="Departments Involved" />
+                  <TableHeader label="Severity" />
+                  <TableHeader label="Status" />
+                  <TableHeader label="Reported" />
+                  <TableHeader label="View" />
                 </tr>
               </thead>
               <tbody>
                 {filteredConflicts.length > 0 ? (
                   filteredConflicts.map((conflict) => (
-                    <tr key={conflict.id} className="border-b hover:bg-gray-50">
+                    <tr key={conflict.id} className="border-b hover:bg-slate-50 transition-colors">
                       <td className="p-3 font-medium">
-                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-blue-600 hover:underline">
+                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-slate-900 hover:text-slate-700">
                           {conflict.id}
                         </Link>
                       </td>
-                      <td className="p-3">{conflict.name}</td>
+                      <td className="p-3 font-medium text-slate-900">{conflict.name}</td>
                       <td className="p-3">
                         <div className="flex flex-wrap gap-1">
                           {conflict.departmentsAffected.map((dept, i) => (
-                            <Badge key={i} variant="outline" className="bg-gray-50 font-normal">
+                            <Badge key={i} variant="outline" className="bg-slate-50 font-normal text-slate-700">
                               {dept}
                             </Badge>
                           ))}
                         </div>
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className={`${getPriorityBadgeStyles(conflict.severity)} font-normal`}>
-                          {conflict.severity}
-                        </Badge>
+                        <PriorityBadge priority={conflict.severity} />
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className={`${getStatusBadgeStyles(conflict.status)} flex items-center`}>
-                          {getStatusIcon(conflict.status)}
-                          {conflict.status}
-                        </Badge>
+                        <StatusBadge status={conflict.status} />
                       </td>
-                      <td className="p-3 text-gray-500 text-sm">
-                        {new Date(conflict.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
+                      <td className="p-3 text-slate-500 text-sm">
+                        {formatDate(conflict.createdAt)}
                       </td>
                       <td className="p-3 text-center">
-                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-blue-600 hover:text-blue-800">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Link to={`/hod/conflicts/${conflict.id}`} className="text-slate-500 hover:text-slate-700">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
                             <ChevronRight className="h-5 w-5" />
                           </Button>
                         </Link>
@@ -410,20 +445,16 @@ const ProjectsDashboard: React.FC = () => {
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500">
-                      No conflicts match your search criteria
-                    </td>
-                  </tr>
+                  <EmptyTableRow colSpan={7} message="No matching conflicts found" />
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
         
-        <CardFooter className="flex justify-between items-center p-2 bg-gray-50 text-sm text-gray-500">
-          <div>Showing {filteredConflicts.length} of {conflicts.length} conflicts</div>
-          <Button variant="outline" size="sm" className="text-xs">View All Conflicts</Button>
+        <CardFooter className="flex justify-between items-center p-3 bg-slate-50 text-sm text-slate-500">
+          <div>Displaying {filteredConflicts.length} of {conflicts.length} conflicts</div>
+          <Button variant="outline" size="sm" className="text-slate-600">View All Conflicts</Button>
         </CardFooter>
       </Card>
     </div>
