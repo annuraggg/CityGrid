@@ -8,6 +8,8 @@ import { Upload } from "@aws-sdk/lib-storage";
 import r2Client from "../config/s3.js";
 import Project from "../models/Project.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import crypto from "crypto";
+import { storeDocumentHash, getDocumentHash, getFileFromS3, compareHashes } from "../utils/docVerifyBLC.js";
 
 const getDocuments = async (c: Context) => {
   try {
@@ -70,7 +72,6 @@ const uploadDocument = async (c: Context) => {
     }
 
     const user = await User.findOne({ _id: auth._id });
-
     if (!user) {
       return sendError(c, 404, "User not found");
     }
@@ -78,7 +79,8 @@ const uploadDocument = async (c: Context) => {
     const formData = await c.req.formData();
     const file = formData.get("document");
     const projectId = formData.get("project");
-    const id = Math.random().toString(36).substring(7);
+
+    const id = Math.random().toString(36).substring(16);
 
     if (!file) {
       return sendError(c, 400, "No file found");
@@ -89,11 +91,14 @@ const uploadDocument = async (c: Context) => {
       return sendError(c, 404, "Project not found");
     }
 
+    const fileBuffer = Buffer.from(await (file as File).arrayBuffer());
+    const hash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+
     const uploadParams = {
       Bucket: process.env.R2_DOC_BUCKET!,
       Key: `${project._id}/${id}.pdf`,
-      Body: file, // @ts-expect-error - Type 'File' is not assignable to type 'Body'
-      ContentType: file.type,
+      Body: fileBuffer,
+      ContentType: (file as File).type,
     };
 
     const upload = new Upload({
@@ -102,25 +107,31 @@ const uploadDocument = async (c: Context) => {
     });
 
     const doc = new Document({
-      // @ts-expect-error - Type 'File' is not assignable to type 'Body'
-      name: file.name, // @ts-expect-error - Type 'File' is not assignable to type 'Body'
-      type: file.type,
+      name: (file as File).name,
+      type: (file as File).type,
       id: id,
+      hash: hash,
     });
 
     await doc.save();
+
+    await storeDocumentHash(doc.id, hash);
 
     project.documents.push(doc._id);
     await project.save();
 
     await upload.done();
 
-    return sendSuccess(c, 200, "Document uploaded successfully", doc);
+    return sendSuccess(c, 200, "Document uploaded successfully", {
+      ...doc.toObject(),
+      hash,
+    });
   } catch (error) {
     logger.error(error as string);
     return sendError(c, 500, "Internal Server Error");
   }
 };
+
 
 const getDocument = async (c: Context) => {
   try {
@@ -139,6 +150,8 @@ const getDocument = async (c: Context) => {
     }
 
     // fetch resume from s3 and send it as a response
+    console.log(projectId);
+    console.log(id);
 
     const command = new GetObjectCommand({
       Bucket: process.env.R2_DOC_BUCKET!,
@@ -169,6 +182,48 @@ const deleteDocument = async (c: Context) => {
   }
 };
 
+
+const verifyDocument = async (c: Context) => {
+  const id = c.req.param("id");
+  console.log("Recived id: " + id);
+
+  try {
+    const document = await Document.findOne({ id });
+    if (!document) return sendError(c, 404, "Document not found");
+
+    console.log(document._id)
+
+    const project = await Project.findOne({
+      documents: { $in: [document._id] }
+    });
+
+    if (!project) return sendError(c, 404, "Project not found for document");
+
+    const fileBuffer = await getFileFromS3(document.id);
+    if (!fileBuffer) return sendError(c, 500, "Failed to retrieve file");
+
+    const currentHash = crypto.createHash("sha256")
+      .update(fileBuffer)
+      .digest("hex");
+
+    const isVerified = await compareHashes(document.id, currentHash);
+
+    console.log(currentHash);
+    console.log(document.hash);
+    console.log(isVerified);
+
+    return sendSuccess(c, 200, "Verification complete", {
+      verified: isVerified,
+      message: isVerified
+        ? "Document is authentic and has not been modified"
+        : "Document verification failed - hash mismatch detected"
+    });
+  } catch (error) {
+    logger.error(`Verification error for document ${id}: ${error}`);
+    return sendError(c, 500, "Verification process failed");
+  }
+};
+
 export default {
   getDocuments,
   getDepartmentDocuments,
@@ -177,4 +232,6 @@ export default {
   getDocument,
   updateDocument,
   deleteDocument,
+  verifyDocument
 };
+

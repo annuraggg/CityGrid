@@ -391,6 +391,7 @@ const ProjectsDashboard: React.FC = () => {
                           {project.department}
                         </Badge>
                       </td>
+<<<<<<< HEAD
                       <td className="p-3">
                         <Badge 
                           variant="outline" 
@@ -411,6 +412,26 @@ const ProjectsDashboard: React.FC = () => {
                       </td>
                       <td className="p-3 text-slate-500 text-sm">
                         {formatDate(project.updatedAt)}
+=======
+                      <td className="p-3">{project.manager}</td>
+                      <td className="p-3 text-gray-500 text-sm">
+                        {new Date(project.schedule?.start).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                        {" - "}
+                        {new Date(project.schedule?.end).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                        {project.schedule?.isRescheduled && (
+                          <Badge className="ml-2 bg-yellow-100 text-yellow-700 border-yellow-200">
+                            Rescheduled
+                          </Badge>
+                        )}
+>>>>>>> bb84bbfd4e252635d1060853e16a85b77bfc51f1
                       </td>
                       <td className="p-3 text-center">
                         <Link to={`/hod/projects/${project.id}`}>

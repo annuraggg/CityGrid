@@ -103,7 +103,7 @@ const Project = () => {
 
   // Handle redirect to create new project
   const goToCreateProject = () => {
-    navigate("project-manager/projects/create");
+    navigate("create");
   };
 
   if (loading) return <Loader />;
