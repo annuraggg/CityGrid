@@ -353,7 +353,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-sm font-medium" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
