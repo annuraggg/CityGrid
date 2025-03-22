@@ -281,40 +281,47 @@ const ResourceManagement: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge 
-            variant="outline" 
-            className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1"
-          >
-            <Clock className="h-3 w-3" />
-            Pending
-          </Badge>
-        );
-      case "dispatched":
-        return (
-          <Badge 
-            variant="outline" 
-            className="bg-indigo-50 text-indigo-700 border-indigo-200 flex items-center gap-1"
-          >
-            <Truck className="h-3 w-3" />
-            Dispatched
-          </Badge>
-        );
-      case "received":
-        return (
-          <Badge 
-            variant="outline" 
-            className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1"
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Received
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    const statusConfig = {
+      pending: {
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
+        icon: <Clock className="h-3 w-3 mr-1" />,
+        label: "Pending"
+      },
+      dispatched: {
+        bg: "bg-indigo-50",
+        text: "text-indigo-700",
+        border: "border-indigo-200",
+        icon: <Truck className="h-3 w-3 mr-1" />,
+        label: "Dispatched"
+      },
+      received: {
+        bg: "bg-emerald-50",
+        text: "text-emerald-700",
+        border: "border-emerald-200",
+        icon: <CheckCircle2 className="h-3 w-3 mr-1" />,
+        label: "Received"
+      }
+    };
+    
+    const config = statusConfig[status] || {
+      bg: "bg-slate-50",
+      text: "text-slate-700",
+      border: "border-slate-200",
+      icon: <AlertCircle className="h-3 w-3 mr-1" />,
+      label: status
+    };
+
+    return (
+      <Badge 
+        variant="outline" 
+        className={`${config.bg} ${config.text} ${config.border} flex items-center gap-1`}
+      >
+        {config.icon}
+        {config.label}
+      </Badge>
+    );
   };
 
   const handleUpdateShareStatus = (
@@ -344,18 +351,30 @@ const ResourceManagement: React.FC = () => {
       default: "bg-slate-50 text-slate-700 border-slate-200"
     };
 
+    const iconMap = {
+      equipment: <Package className="h-3 w-3 mr-1" />,
+      material: <Package className="h-3 w-3 mr-1" />,
+      vehicle: <Truck className="h-3 w-3 mr-1" />,
+      tool: <FileText className="h-3 w-3 mr-1" />,
+      personnel: <Building className="h-3 w-3 mr-1" />,
+      default: <Package className="h-3 w-3 mr-1" />
+    };
+
+    const lowerCategory = category.toLowerCase();
+
     return (
       <Badge 
         variant="outline" 
-        className={badgeClasses[category.toLowerCase()] || badgeClasses.default}
+        className={`${badgeClasses[lowerCategory] || badgeClasses.default} flex items-center`}
       >
+        {iconMap[lowerCategory] || iconMap.default}
         {category}
       </Badge>
     );
   };
 
   return (
-    <div className="w-full mx-auto px-6 py-8 space-y-8 max-w-7xl">
+    <div className="w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 max-w-7xl">
       {/* Add Resource Modal */}
       <AddResourceModal
         isOpen={isAddModalOpen}
@@ -372,7 +391,7 @@ const ResourceManagement: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            className="text-slate-700 border-slate-200 hover:bg-slate-50 h-9 px-3 text-sm font-medium"
+            className="text-slate-700 border-slate-200 hover:bg-slate-50 h-9 px-3 text-sm font-medium transition-colors"
           >
             <SlidersHorizontal className="h-4 w-4 mr-2 text-slate-500" />
             Filters
@@ -380,14 +399,14 @@ const ResourceManagement: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            className="text-slate-700 border-slate-200 hover:bg-slate-50 h-9 px-3 text-sm font-medium"
+            className="text-slate-700 border-slate-200 hover:bg-slate-50 h-9 px-3 text-sm font-medium transition-colors"
           >
             <Download className="h-4 w-4 mr-2 text-slate-500" />
             Export
           </Button>
           <Button
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 h-9 px-3 text-sm font-medium"
+            className="bg-indigo-600 hover:bg-indigo-700 h-9 px-3 text-sm font-medium transition-colors"
             onClick={handleOpenAddModal}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -396,21 +415,21 @@ const ResourceManagement: React.FC = () => {
         </div>
       </div>
 
-      <Card className="border-slate-200 shadow-sm mb-6">
-        <CardContent className="p-4">
+      <Card className="border-slate-200 shadow-sm mb-6 overflow-hidden">
+        <CardContent className="p-3 sm:p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search resources by name, category or department..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-slate-200 focus:border-indigo-500 h-10"
+              className="pl-10 border-slate-200 focus:border-indigo-500 h-10 focus-visible:ring-indigo-500/30"
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-200 shadow-sm overflow-hidden py-0">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -419,7 +438,7 @@ const ResourceManagement: React.FC = () => {
           <TabsList className="bg-slate-50 border-b border-slate-200 h-12 p-0 w-full rounded-t-md rounded-b-none flex">
             <TabsTrigger
               value="my-resources"
-              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 transition-colors"
             >
               <FileText className="h-4 w-4" />
               <span className="font-medium">My Resources</span>
@@ -432,7 +451,7 @@ const ResourceManagement: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger
               value="marketplace"
-              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700"
+              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 transition-colors"
             >
               <Package className="h-4 w-4" />
               <span className="font-medium">Resource Marketplace</span>
@@ -445,7 +464,7 @@ const ResourceManagement: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger
               value="requests"
-              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700"
+              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none border-r border-slate-200 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 transition-colors"
             >
               <Share2 className="h-4 w-4" />
               <span className="font-medium">Share Requests</span>
@@ -458,7 +477,7 @@ const ResourceManagement: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger
               value="signatures"
-              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none data-[state=active]:bg-rose-50 data-[state=active]:text-rose-700"
+              className="flex-1 flex items-center justify-center gap-2 h-full rounded-none data-[state=active]:bg-rose-50 data-[state=active]:text-rose-700 transition-colors"
             >
               <FileSignature className="h-4 w-4" />
               <span className="font-medium">Pending Signatures</span>
@@ -551,7 +570,7 @@ const ResourceManagement: React.FC = () => {
                               <img
                                 src={resource.photo}
                                 alt={resource.name}
-                                className="h-10 w-10 rounded-md object-cover"
+                                className="h-10 w-10 rounded-md object-cover shadow-sm border border-slate-200"
                               />
                             ) : (
                               <Avatar
@@ -601,24 +620,24 @@ const ResourceManagement: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 text-slate-600 hover:bg-slate-100"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 text-slate-600 hover:bg-slate-100 transition-opacity"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="border-slate-200">
+                            <DropdownMenuContent align="end" className="border-slate-200 w-48">
                               <DropdownMenuLabel className="text-slate-700">Actions</DropdownMenuLabel>
-                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer">
+                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center">
                                 <Eye className="h-4 w-4 mr-2 text-slate-500" /> View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer">
+                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center">
                                 <Edit className="h-4 w-4 mr-2 text-slate-500" /> Edit Resource
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer">
+                              <DropdownMenuItem className="text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center">
                                 <Share2 className="h-4 w-4 mr-2 text-slate-500" /> Share Resource
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-slate-100" />
-                              <DropdownMenuItem className="text-rose-600 hover:text-rose-700 cursor-pointer">
+                              <DropdownMenuItem className="text-rose-600 hover:text-rose-700 cursor-pointer flex items-center">
                                 <Trash2 className="h-4 w-4 mr-2" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -639,7 +658,7 @@ const ResourceManagement: React.FC = () => {
                   You don't have any resources or none match your search criteria.
                 </p>
                 <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium"
+                  className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 text-sm font-medium transition-colors"
                   onClick={handleOpenAddModal}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -920,19 +939,19 @@ const ResourceManagement: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 text-slate-600 hover:bg-slate-100"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 text-slate-600 hover:bg-slate-100 transition-opacity"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="border-slate-200">
+                            <DropdownMenuContent align="end" className="border-slate-200 w-48">
                               <DropdownMenuLabel className="text-slate-700">Update Status</DropdownMenuLabel>
                               <DropdownMenuItem
                                 onClick={() => handleUpdateShareStatus(share._id, "pending")}
                                 disabled={share.status === "pending"}
                                 className={share.status === "pending" 
                                   ? "text-slate-400 cursor-not-allowed" 
-                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer"}
+                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center"}
                               >
                                 <Clock className="h-4 w-4 mr-2 text-amber-500" /> Mark as Pending
                               </DropdownMenuItem>
@@ -941,7 +960,7 @@ const ResourceManagement: React.FC = () => {
                                 disabled={share.status === "dispatched"}
                                 className={share.status === "dispatched" 
                                   ? "text-slate-400 cursor-not-allowed" 
-                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer"}
+                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center"}
                               >
                                 <Truck className="h-4 w-4 mr-2 text-indigo-500" /> Mark as Dispatched
                               </DropdownMenuItem>
@@ -950,7 +969,7 @@ const ResourceManagement: React.FC = () => {
                                 disabled={share.status === "received"}
                                 className={share.status === "received" 
                                   ? "text-slate-400 cursor-not-allowed" 
-                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer"}
+                                  : "text-slate-700 hover:text-indigo-600 cursor-pointer flex items-center"}
                               >
                                 <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" /> Mark as Received
                               </DropdownMenuItem>
