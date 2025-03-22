@@ -98,7 +98,6 @@ const ViewProject = () => {
           conflictId: conflicts[0]._id,
         })
         .then((res) => {
-          toast.success("Conflict detected. " + res.data.message);
           setAiSuggestion(res.data.data);
         })
         .catch((err) => {
