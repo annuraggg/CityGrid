@@ -53,6 +53,8 @@ const ViewProject = () => {
   const [newStartDate, setNewStartDate] = useState<string>("");
   const [newEndDate, setNewEndDate] = useState<string>("");
   const [aiSUggestion, setAiSuggestion] = useState<string>("");
+  const [verificationStatus, setVerificationStatus] = useState<Record<string, boolean>>({});
+  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
 
   const fetchProject = () => {
     const pid = window.location.pathname.split("/").pop();
@@ -173,6 +175,42 @@ const ViewProject = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const verifyDocument = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault(); // Prevent default behavior
+
+    if (verifyingDocId === docId) return;
+
+    setVerifyingDocId(docId);
+
+    try {
+      console.log(`Verifying document with id: ${docId}`);
+      const res = await axios.get(`documents/${docId}/verify`);
+
+      // Log response for debugging
+      console.log("Verification response:", res.data);
+
+      setVerificationStatus(prev => ({ ...prev, [docId]: res.data.data.verified }));
+
+      if (res.data.data.verified) {
+        toast.success("Document successfully verified on blockchain");
+      } else {
+        toast.error("Document verification failed - hash mismatch");
+      }
+    } catch (err: any) {
+      console.error("Error during verification:", err);
+
+      // More detailed error logging
+      if (err.response) {
+        console.error("Error response:", err.response.status, err.response.data);
+      }
+
+      toast.error(err.response?.data?.message || "Verification process failed");
+    } finally {
+      setVerifyingDocId(null);
     }
   };
 
@@ -410,10 +448,34 @@ const ViewProject = () => {
                         <div
                           key={index}
                           className="flex items-center p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                          onClick={() => downloadFile(doc._id)}
+                          onClick={() => downloadFile(doc.id)}
                         >
-                          <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{doc.name}</span>
+                          <div
+                            className="flex items-center cursor-pointer"
+                            onClick={() => downloadFile(doc.id)}
+                          >
+                            <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span>{doc.id}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              disabled={verifyingDocId === doc.id}
+                              onClick={(e) => verifyDocument(doc.id, e)}
+                            >
+                              {verifyingDocId === doc.id
+                                ? "Verifying..."
+                                : verificationStatus[doc.id]
+                                  ? "Verified ✅"
+                                  : "Verify"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => downloadFile(doc.id)}
+                            >
+                              Download
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
