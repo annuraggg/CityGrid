@@ -2,7 +2,7 @@
 
 ## Platform for Inter-departmental Cooperation in Indian Cities
 
-**CityGrid** is an open-source digital platform designed to address the challenge of fragmented urban governance in Indian cities. It enables cooperation, data sharing, unified planning, and coordinated implementation among multiple authorities and agencies working in the urban landscape.
+**CityGrid** is an open-source digital platform designed to address the challenge of fragmented urban governance in Indian cities. It enables cooperation, data sharing, unified planning, and coordinated implementation among multiple authorities and agencies working in the urban landscape. Built under 24 hours for the Hackoverflow 2025 Hackathon
 
 ---
 
